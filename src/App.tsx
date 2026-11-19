@@ -9,6 +9,7 @@ import {
   Swords,
   X,
 } from 'lucide-react';
+import { ComparisonBar } from './components/ComparisonBar';
 import { ConflictTrack } from './components/ConflictTrack';
 import { Lobby } from './components/Lobby';
 import {
@@ -302,6 +303,8 @@ export function App() {
         />
 
         <section className="center-board">
+          <ComparisonBar state={state} selfIdx={selfIdx} oppIdx={oppIdx} />
+
           {state.logs[0] && (
             <div className="latest-log-ticker">
               <Sparkles size={13} className="ticker-icon" />

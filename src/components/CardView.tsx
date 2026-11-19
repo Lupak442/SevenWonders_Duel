@@ -160,7 +160,21 @@ export const CardView: React.FC<CardViewProps> = ({
           )}
 
           {card.guildVp && (
-            <span className="special-badge">길드 +{card.guildVp.vpPer}점</span>
+            <span className="special-badge">
+              {card.guildVp.type === 'mostWonders'
+                ? `불가사의 +${card.guildVp.vpPer}점`
+                : card.guildVp.type === 'coins'
+                  ? `3코인당 +${card.guildVp.vpPer}점`
+                  : card.guildVp.colors?.includes('yellow')
+                    ? `노랑 +${card.guildVp.vpPer}점`
+                    : card.guildVp.colors?.includes('blue')
+                      ? `파랑 +${card.guildVp.vpPer}점`
+                      : card.guildVp.colors?.includes('green')
+                        ? `초록 +${card.guildVp.vpPer}점`
+                        : card.guildVp.colors?.includes('red')
+                          ? `빨강 +${card.guildVp.vpPer}점`
+                          : `자원 +${card.guildVp.vpPer}점`}
+            </span>
           )}
         </div>
       </div>
