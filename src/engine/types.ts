@@ -125,7 +125,7 @@ export type GamePhase =
   | 'game_over';
 
 export type GameMode = 'ai' | 'local' | 'online';
-export type AIDifficulty = 'easy' | 'normal' | 'hard' | 'master';
+export type AIDifficulty = 'easy' | 'normal' | 'hard' | 'master' | 'grandmaster';
 export type VictoryType = 'military' | 'scientific' | 'civilian';
 
 export interface LogEntry {

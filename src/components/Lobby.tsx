@@ -119,34 +119,42 @@ export const Lobby: React.FC<LobbyProps> = ({
 
             <div className="field-label">
               AI 난이도 선택
-              <div className="diff-row diff-row-4">
-                {(['easy', 'normal', 'hard', 'master'] as AIDifficulty[]).map((d) => (
-                  <button
-                    type="button"
-                    key={d}
-                    className={`diff-btn ${difficulty === d ? 'active' : ''}`}
-                    onClick={() => setDifficulty(d)}
-                  >
-                    <span className="diff-title">
-                      {d === 'easy'
-                        ? '입문'
-                        : d === 'normal'
-                          ? '숙련'
-                          : d === 'hard'
-                            ? '전설'
-                            : '신화'}
-                    </span>
-                    <span className="diff-sub">
-                      {d === 'easy'
-                        ? 'Easy'
-                        : d === 'normal'
-                          ? 'Normal'
-                          : d === 'hard'
-                            ? 'Hard'
-                            : 'Master'}
-                    </span>
-                  </button>
-                ))}
+              <div className="diff-row diff-row-5">
+                {(['easy', 'normal', 'hard', 'master', 'grandmaster'] as AIDifficulty[]).map(
+                  (d) => (
+                    <button
+                      type="button"
+                      key={d}
+                      className={`diff-btn ${d === 'grandmaster' ? 'diff-grandmaster' : ''} ${
+                        difficulty === d ? 'active' : ''
+                      }`}
+                      onClick={() => setDifficulty(d)}
+                    >
+                      <span className="diff-title">
+                        {d === 'easy'
+                          ? '입문'
+                          : d === 'normal'
+                            ? '숙련'
+                            : d === 'hard'
+                              ? '전설'
+                              : d === 'master'
+                                ? '신화'
+                                : '초월'}
+                      </span>
+                      <span className="diff-sub">
+                        {d === 'easy'
+                          ? 'Easy'
+                          : d === 'normal'
+                            ? 'Normal'
+                            : d === 'hard'
+                              ? 'Hard'
+                              : d === 'master'
+                                ? 'Master'
+                                : 'AI+'}
+                      </span>
+                    </button>
+                  )
+                )}
               </div>
             </div>
 

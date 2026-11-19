@@ -268,6 +268,21 @@ button {
   grid-template-columns: repeat(4, 1fr);
 }
 
+.diff-row-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.diff-grandmaster {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.diff-grandmaster.active {
+  border-color: #f87171;
+  background: linear-gradient(160deg, rgba(220, 38, 38, 0.32), rgba(153, 27, 27, 0.18));
+  color: #fecaca;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.25);
+}
+
 .diff-btn {
   display: flex;
   flex-direction: column;
@@ -2026,8 +2041,9 @@ button {
   .lobby-title {
     font-size: 24px;
   }
-  .diff-row-4 {
-    grid-template-columns: repeat(2, 1fr);
+  .diff-row-4,
+  .diff-row-5 {
+    grid-template-columns: repeat(3, 1fr);
   }
   .top-bar {
     padding: 8px 10px;

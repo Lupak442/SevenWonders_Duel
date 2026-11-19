@@ -12,7 +12,11 @@ import {
   pickWonder,
 } from './game';
 import { isSlotPlayable } from './pyramids';
-import { getDistinctScienceCount, getScienceSymbolCounts } from './scoring';
+import {
+  calculateScore,
+  getDistinctScienceCount,
+  getScienceSymbolCounts,
+} from './scoring';
 import { AIDifficulty, CardDef, GameState } from './types';
 
 function scoreWonderDraft(wonderId: string): number {
@@ -61,7 +65,7 @@ function scoreCardValue(
     const pos = aiIdx === 0 ? state.conflictPosition : -state.conflictPosition;
     // Instant military win!
     if (pos + shields >= 9) return 1000;
-    score += shields * (difficulty === 'hard' || difficulty === 'master' ? 3.8 : 3.0);
+    score += shields * (difficulty === 'hard' || difficulty === 'master' || difficulty === 'grandmaster' ? 3.8 : 3.0);
   }
   if (card.science) {
     const counts = getScienceSymbolCounts(ai);
@@ -99,9 +103,189 @@ function scoreCardValue(
   return score;
 }
 
+/**
+ * Full zero-sum board evaluation from `aiIdx`'s perspective for Grandmaster Alpha-Beta search.
+ */
+function evaluateBoard(state: GameState, aiIdx: 0 | 1): number {
+  const oppIdx: 0 | 1 = aiIdx === 0 ? 1 : 0;
+
+  if (state.phase === 'game_over') {
+    if (state.winner === aiIdx) return 100000;
+    if (state.winner === oppIdx) return -100000;
+    return 0;
+  }
+
+  const ai = state.players[aiIdx];
+  const opp = state.players[oppIdx];
+
+  const aiScore = calculateScore(state, aiIdx);
+  const oppScore = calculateScore(state, oppIdx);
+  let evalScore = (aiScore.total - oppScore.total) * 3.2;
+
+  // 1. Military pressure & supremacy proximity
+  const milPos = aiIdx === 0 ? state.conflictPosition : -state.conflictPosition;
+  evalScore += milPos * 2.4;
+  if (milPos >= 6) evalScore += 14;
+  else if (milPos <= -6) evalScore -= 16;
+
+  // 2. Science threat (4/6 and 5/6 are huge threats)
+  const aiSci = getDistinctScienceCount(ai);
+  const oppSci = getDistinctScienceCount(opp);
+  evalScore += (aiSci - oppSci) * 6.5;
+  if (aiSci >= 5) evalScore += 28;
+  if (oppSci >= 5) evalScore -= 34;
+
+  // 3. Economy & resource monopoly (Age 1 & 2 value resources highly)
+  const resWeight = state.age === 1 ? 3.8 : state.age === 2 ? 2.2 : 0.6;
+  const aiCardRes = ai.cards.reduce((acc, id) => {
+    const c = CARDS[id];
+    if (!c) return acc;
+    const fixed = Object.values(c.produces ?? {}).reduce((s, n) => s + (n ?? 0), 0);
+    return acc + fixed + (c.flexibleProduces ? 1.3 : 0) + (c.tradingDiscount ? 1.1 : 0);
+  }, 0);
+  const oppCardRes = opp.cards.reduce((acc, id) => {
+    const c = CARDS[id];
+    if (!c) return acc;
+    const fixed = Object.values(c.produces ?? {}).reduce((s, n) => s + (n ?? 0), 0);
+    return acc + fixed + (c.flexibleProduces ? 1.3 : 0) + (c.tradingDiscount ? 1.1 : 0);
+  }, 0);
+  evalScore += (aiCardRes - oppCardRes) * resWeight;
+
+  // Coin difference
+  evalScore += (ai.coins - opp.coins) * 0.75;
+
+  // 4. Unbuilt Wonders tempo (especially playAgain wonders)
+  if (state.totalWondersBuilt < 7) {
+    for (const w of ai.wonders) {
+      if (!w.built) {
+        const def = WONDERS[w.wonderId];
+        evalScore += def?.playAgain ? 7.5 : 3.5;
+      }
+    }
+    for (const w of opp.wonders) {
+      if (!w.built) {
+        const def = WONDERS[w.wonderId];
+        evalScore -= def?.playAgain ? 7.5 : 3.5;
+      }
+    }
+  }
+
+  return evalScore;
+}
+
+type CandidateMove = { score: number; run: () => GameState };
+
+function generateCandidates(state: GameState, playerIdx: 0 | 1): CandidateMove[] {
+  const player = state.players[playerIdx];
+  const oppIdx: 0 | 1 = playerIdx === 0 ? 1 : 0;
+  const opp = state.players[oppIdx];
+  const candidates: CandidateMove[] = [];
+
+  const playableSlots = state.pyramid.filter((s) => isSlotPlayable(state.pyramid, s.index));
+
+  for (const slot of playableSlots) {
+    const card = slot.cardId ? CARDS[slot.cardId] : null;
+    if (!card) continue;
+
+    // 1. Build card
+    const buildCost = getCardBuildCost(player, opp, card);
+    if (buildCost.canAfford) {
+      let val = scoreCardValue(card, state, playerIdx, 'grandmaster');
+      val -= buildCost.totalCoins * 0.75;
+      if (buildCost.freeByChain && player.progressTokens.includes('pt_urbanism')) {
+        val += 3.5;
+      }
+      candidates.push({
+        score: val,
+        run: () => buildCardFromPyramid(state, slot.index),
+      });
+    }
+
+    // 2. Build Wonder
+    if (state.totalWondersBuilt < 7) {
+      for (const w of player.wonders) {
+        if (w.built) continue;
+        const wonderDef = WONDERS[w.wonderId];
+        if (!wonderDef) continue;
+        const wCost = getWonderBuildCost(player, opp, wonderDef);
+        if (wCost.canAfford) {
+          let val = scoreWonderDraft(w.wonderId) - wCost.totalCoins * 0.7;
+          const pos = playerIdx === 0 ? state.conflictPosition : -state.conflictPosition;
+          if (wonderDef.shields && pos + wonderDef.shields >= 9) val = 1000;
+          if (player.progressTokens.includes('pt_theology') && !wonderDef.playAgain) {
+            val += 6;
+          }
+          candidates.push({
+            score: val,
+            run: () => buildWonderFromPyramid(state, slot.index, w.wonderId),
+          });
+        }
+      }
+    }
+
+    // 3. Discard for coins
+    const yellowCount = player.cards.filter((id) => CARDS[id]?.color === 'yellow').length;
+    const coinGain = 2 + yellowCount;
+    const oppThreat = scoreCardValue(card, state, oppIdx, 'hard');
+    const discardScore =
+      coinGain * 0.8 + (player.coins < 3 ? 3 : 0) + (oppThreat > 15 ? oppThreat * 0.25 : 0);
+    candidates.push({
+      score: discardScore,
+      run: () => discardCardFromPyramid(state, slot.index),
+    });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates;
+}
+
+function alphaBeta(
+  state: GameState,
+  depth: number,
+  alpha: number,
+  beta: number,
+  aiIdx: 0 | 1,
+  deadline: number
+): number {
+  if (
+    depth <= 0 ||
+    state.phase === 'game_over' ||
+    state.phase !== 'playing' ||
+    Date.now() > deadline
+  ) {
+    return evaluateBoard(state, aiIdx);
+  }
+
+  const cur = state.currentPlayer;
+  const isMax = cur === aiIdx;
+  const moves = generateCandidates(state, cur).slice(0, 6);
+  if (moves.length === 0) return evaluateBoard(state, aiIdx);
+
+  if (isMax) {
+    let best = -Infinity;
+    for (const m of moves) {
+      const next = m.run();
+      const val = alphaBeta(next, depth - 1, alpha, beta, aiIdx, deadline);
+      if (val > best) best = val;
+      if (best > alpha) alpha = best;
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const m of moves) {
+      const next = m.run();
+      const val = alphaBeta(next, depth - 1, alpha, beta, aiIdx, deadline);
+      if (val < best) best = val;
+      if (best < beta) beta = best;
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
 export function performAITurn(state: GameState): GameState {
   const aiIdx = state.currentPlayer;
-  const ai = state.players[aiIdx];
   const oppIdx: 0 | 1 = aiIdx === 0 ? 1 : 0;
   const opp = state.players[oppIdx];
   const diff = state.aiDifficulty;
@@ -162,68 +346,41 @@ export function performAITurn(state: GameState): GameState {
   }
 
   if (state.phase === 'choose_age_starter') {
+    if (diff === 'grandmaster') {
+      // In Grandmaster, evaluate whether going 1st or 2nd yields a better board after 2 plies
+      const sFirst = chooseAgeStarter(state, aiIdx);
+      const sSecond = chooseAgeStarter(state, oppIdx);
+      const deadline = Date.now() + 80;
+      const vFirst = alphaBeta(sFirst, 2, -Infinity, Infinity, aiIdx, deadline);
+      const vSecond = alphaBeta(sSecond, 2, -Infinity, Infinity, aiIdx, deadline);
+      return vFirst >= vSecond ? sFirst : sSecond;
+    }
     return chooseAgeStarter(state, aiIdx);
   }
 
   if (state.phase !== 'playing') return state;
 
-  // Evaluate all playable actions
-  type Candidate = { score: number; run: () => GameState };
-  const candidates: Candidate[] = [];
+  const candidates = generateCandidates(state, aiIdx);
 
-  const playableSlots = state.pyramid.filter((s) => isSlotPlayable(state.pyramid, s.index));
+  // Grandmaster difficulty: Alpha-Beta Minimax search (depth 3, or 4 in endgame)
+  if (diff === 'grandmaster' && candidates.length > 1) {
+    if (candidates[0].score >= 900) return candidates[0].run();
+    const remainingCards = state.pyramid.filter((s) => s.cardId !== null).length;
+    const depth = remainingCards <= 10 ? 4 : 3;
+    const deadline = Date.now() + 240;
 
-  for (const slot of playableSlots) {
-    const card = slot.cardId ? CARDS[slot.cardId] : null;
-    if (!card) continue;
-
-    // 1. Build card
-    const buildCost = getCardBuildCost(ai, opp, card);
-    if (buildCost.canAfford) {
-      let val = scoreCardValue(card, state, aiIdx, diff);
-      val -= buildCost.totalCoins * 0.75;
-      if (buildCost.freeByChain && ai.progressTokens.includes('pt_urbanism')) {
-        val += 3;
-      }
-      candidates.push({
-        score: val,
-        run: () => buildCardFromPyramid(state, slot.index),
-      });
-    }
-
-    // 2. Build Wonder
-    if (state.totalWondersBuilt < 7) {
-      for (const w of ai.wonders) {
-        if (w.built) continue;
-        const wonderDef = WONDERS[w.wonderId];
-        if (!wonderDef) continue;
-        const wCost = getWonderBuildCost(ai, opp, wonderDef);
-        if (wCost.canAfford) {
-          let val = scoreWonderDraft(w.wonderId) - wCost.totalCoins * 0.7;
-          const pos = aiIdx === 0 ? state.conflictPosition : -state.conflictPosition;
-          if (wonderDef.shields && pos + wonderDef.shields >= 9) val = 1000;
-          if (ai.progressTokens.includes('pt_theology') && !wonderDef.playAgain) {
-            val += 6;
-          }
-          candidates.push({
-            score: val,
-            run: () => buildWonderFromPyramid(state, slot.index, w.wonderId),
-          });
-        }
+    let bestMove = candidates[0];
+    let bestVal = -Infinity;
+    for (const cand of candidates.slice(0, 8)) {
+      const next = cand.run();
+      const val = alphaBeta(next, depth - 1, -Infinity, Infinity, aiIdx, deadline);
+      if (val > bestVal) {
+        bestVal = val;
+        bestMove = cand;
       }
     }
-
-    // 3. Discard for coins
-    const yellowCount = ai.cards.filter((id) => CARDS[id]?.color === 'yellow').length;
-    const coinGain = 2 + yellowCount;
-    const discardScore = coinGain * 0.8 + (ai.coins < 3 ? 3 : 0);
-    candidates.push({
-      score: discardScore,
-      run: () => discardCardFromPyramid(state, slot.index),
-    });
+    return bestMove.run();
   }
-
-  candidates.sort((a, b) => b.score - a.score);
 
   // Master difficulty: 2-ply lookahead to avoid unlocking killer cards for the opponent
   if (diff === 'master' && candidates.length > 1) {
