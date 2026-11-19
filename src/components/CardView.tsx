@@ -1,4 +1,5 @@
 import React from 'react';
+import { Landmark } from 'lucide-react';
 import { CardDef, ResourceType } from '../engine/types';
 import { CostResult } from '../engine/cost';
 import {
@@ -151,7 +152,7 @@ export const CardView: React.FC<CardViewProps> = ({
             </span>
           )}
 
-          {card.coinsPerCard && (
+          {card.coinsPerCard && !card.guildVp && (
             <span className="special-badge">
               +{card.coinsPerCard.amount}
               <CoinIcon size={10} />
@@ -160,21 +161,36 @@ export const CardView: React.FC<CardViewProps> = ({
           )}
 
           {card.guildVp && (
-            <span className="special-badge">
-              {card.guildVp.type === 'mostWonders'
-                ? `불가사의 +${card.guildVp.vpPer}점`
-                : card.guildVp.type === 'coins'
-                  ? `3코인당 +${card.guildVp.vpPer}점`
-                  : card.guildVp.colors?.includes('yellow')
-                    ? `노랑 +${card.guildVp.vpPer}점`
-                    : card.guildVp.colors?.includes('blue')
-                      ? `파랑 +${card.guildVp.vpPer}점`
-                      : card.guildVp.colors?.includes('green')
-                        ? `초록 +${card.guildVp.vpPer}점`
-                        : card.guildVp.colors?.includes('red')
-                          ? `빨강 +${card.guildVp.vpPer}점`
-                          : `자원 +${card.guildVp.vpPer}점`}
-            </span>
+            <div className="guild-visual-badge" title={card.nameKo}>
+              <div className="guild-target-icons">
+                {card.guildVp.type === 'mostWonders' && (
+                  <span className="mini-wonder-chip" title="불가사의">
+                    <Landmark size={11} />
+                  </span>
+                )}
+                {card.guildVp.type === 'coins' && (
+                  <span className="mini-coins-chip" title="3코인당">
+                    3<CoinIcon size={10} />
+                  </span>
+                )}
+                {card.guildVp.type === 'mostColor' &&
+                  card.guildVp.colors?.map((c) => (
+                    <span key={c} className={`mini-card-chip mc-${c}`} title={c} />
+                  ))}
+              </div>
+              <div className="guild-reward-nums">
+                {card.coinsPerCard && (
+                  <span className="gr-coin">
+                    +{card.coinsPerCard.amount}
+                    <CoinIcon size={10} />
+                  </span>
+                )}
+                <span className="gr-vp">
+                  +{card.guildVp.vpPer}
+                  <VPIcon size={11} />
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -68,6 +68,31 @@ export const CardActionModal: React.FC<CardActionModalProps> = ({
           <CardView card={card} costInfo={cardCost} playable />
         </div>
 
+        {card.guildVp && (
+          <div className="action-effect-desc">
+            <strong>길드 효과:</strong>{' '}
+            {card.guildVp.type === 'mostWonders'
+              ? `나와 상대 중 완공된 불가사의가 더 많은 쪽 개수 × ${card.guildVp.vpPer}점`
+              : card.guildVp.type === 'coins'
+                ? `나와 상대 중 보유 코인이 더 많은 쪽의 3코인당 +${card.guildVp.vpPer}점`
+                : `나와 상대 중 [${card.guildVp.colors
+                    ?.map((c) =>
+                      c === 'yellow'
+                        ? '노란색'
+                        : c === 'blue'
+                          ? '파란색'
+                          : c === 'green'
+                            ? '초록색'
+                            : c === 'red'
+                              ? '빨간색'
+                              : c === 'brown'
+                                ? '갈색'
+                                : '회색'
+                    )
+                    .join(' + ')}] 카드를 더 많이 가진 쪽 장수만큼 즉시 +1코인 & 종료 시 +${card.guildVp.vpPer}점`}
+          </div>
+        )}
+
         <div className="action-buttons-col">
           {/* 1. Build Building */}
           <button
