@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, Globe, Landmark, Plus, Shield, Sparkles, Swords, Users } from 'lucide-react';
+import { BookOpen, Bot, Globe, Landmark, Plus, Shield, Sparkles, Swords, Users } from 'lucide-react';
 import { AIDifficulty } from '../engine/types';
 
 interface LobbyProps {
@@ -15,6 +15,7 @@ interface LobbyProps {
   ) => void;
   onCreateOnline: (serverUrl: string, playerName: string) => void;
   onJoinOnline: (serverUrl: string, roomCode: string, playerName: string) => void;
+  onOpenRules: () => void;
   onlineStatus: string | null;
 }
 
@@ -35,6 +36,7 @@ export const Lobby: React.FC<LobbyProps> = ({
   onStartLocal,
   onCreateOnline,
   onJoinOnline,
+  onOpenRules,
   onlineStatus,
 }) => {
   const [difficulty, setDifficulty] = useState<AIDifficulty>('normal');
@@ -280,6 +282,11 @@ export const Lobby: React.FC<LobbyProps> = ({
             {onlineStatus && <div className="online-status">{onlineStatus}</div>}
           </div>
         )}
+
+        <button type="button" className="lobby-rules-btn" onClick={onOpenRules}>
+          <BookOpen size={15} />
+          <span>처음이라면? 카드 · 진보 토큰 · 불가사의 완벽 가이드</span>
+        </button>
       </div>
     </div>
   );

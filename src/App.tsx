@@ -203,13 +203,17 @@ export function App() {
 
   if (!state) {
     return (
-      <Lobby
-        onStartAI={handleStartAI}
-        onStartLocal={handleStartLocal}
-        onCreateOnline={handleCreateOnline}
-        onJoinOnline={handleJoinOnline}
-        onlineStatus={onlineStatus}
-      />
+      <>
+        <Lobby
+          onStartAI={handleStartAI}
+          onStartLocal={handleStartLocal}
+          onCreateOnline={handleCreateOnline}
+          onJoinOnline={handleJoinOnline}
+          onOpenRules={() => setShowRules(true)}
+          onlineStatus={onlineStatus}
+        />
+        {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+      </>
     );
   }
 
