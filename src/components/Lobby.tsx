@@ -42,8 +42,14 @@ export const Lobby: React.FC<LobbyProps> = ({
   const [playerName, setPlayerName] = useState('플레이어 1');
   const [p2Name, setP2Name] = useState('플레이어 2');
   const [serverUrl, setServerUrl] = useState(getDefaultServerUrl);
-  const [roomCode, setRoomCode] = useState('');
-  const [tab, setTab] = useState<'ai' | 'local' | 'online'>('ai');
+  const initialRoomParam =
+    typeof window !== 'undefined'
+      ? (new URLSearchParams(window.location.search).get('room') || '').toUpperCase().trim()
+      : '';
+  const [roomCode, setRoomCode] = useState(initialRoomParam);
+  const [tab, setTab] = useState<'ai' | 'local' | 'online'>(
+    initialRoomParam ? 'online' : 'ai'
+  );
 
   return (
     <div className="lobby-screen">

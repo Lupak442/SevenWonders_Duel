@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BookOpen,
+  Check,
   Coins,
+  Copy,
   FlaskConical,
   Hammer,
   Home,
+  Link2,
   RotateCcw,
   Swords,
   Trophy,
+  Users,
   X,
 } from 'lucide-react';
 import { CARDS, PROGRESS_TOKENS, WONDERS } from '../engine/cards';
@@ -442,6 +446,80 @@ export const GameOverModal: React.FC<{
             </span>
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+export const OnlineWaitingModal: React.FC<{
+  roomCode: string | null;
+  statusText: string | null;
+  onCancel: () => void;
+}> = ({ roomCode, statusText, onCancel }) => {
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+
+  const copyText = (text: string, type: 'code' | 'link') => {
+    navigator.clipboard?.writeText(text).catch(() => {});
+    setCopied(type);
+    window.setTimeout(() => setCopied(null), 1800);
+  };
+
+  const inviteUrl =
+    typeof window !== 'undefined' && roomCode
+      ? `${window.location.origin}/?room=${roomCode}`
+      : '';
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-card online-wait-modal">
+        <div className="modal-header">
+          <div>
+            <h3 className="ab-title-icon">
+              <Users size={18} />
+              상대방 입장 대기 중
+            </h3>
+            <p className="modal-sub">
+              아래 방 코드 또는 초대 링크를 친구에게 보내주세요.
+            </p>
+          </div>
+        </div>
+
+        <div className="wait-code-box">
+          <span className="wait-code-label">방 코드</span>
+          <strong className="wait-code-value">{roomCode ?? '....'}</strong>
+        </div>
+
+        <div className="wait-copy-row">
+          <button
+            type="button"
+            className="action-btn btn-build"
+            disabled={!roomCode}
+            onClick={() => roomCode && copyText(roomCode, 'code')}
+          >
+            <span className="ab-title-icon">
+              {copied === 'code' ? <Check size={15} /> : <Copy size={15} />}
+              {copied === 'code' ? '코드 복사됨!' : '방 코드 복사'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="action-btn btn-discard"
+            disabled={!inviteUrl}
+            onClick={() => inviteUrl && copyText(inviteUrl, 'link')}
+          >
+            <span className="ab-title-icon">
+              {copied === 'link' ? <Check size={15} /> : <Link2 size={15} />}
+              {copied === 'link' ? '링크 복사됨!' : '초대 링크 복사'}
+            </span>
+          </button>
+        </div>
+
+        {statusText && <div className="online-status">{statusText}</div>}
+
+        <button type="button" className="wait-cancel-btn" onClick={onCancel}>
+          취소하고 로비로 돌아가기
+        </button>
       </div>
     </div>
   );

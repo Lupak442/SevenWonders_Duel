@@ -109,7 +109,10 @@ wss.on('connection', (ws) => {
       currentRoom = code;
       playerIndex = 1;
       send(ws, { type: 'room_joined', code, playerIndex: 1, state: room.state });
-      send(room.players[0], { type: 'opponent_joined' });
+      send(room.players[0], {
+        type: 'opponent_joined',
+        playerName: data.playerName || '상대 플레이어',
+      });
     } else if (data.type === 'sync_state') {
       const room = currentRoom ? rooms.get(currentRoom) : null;
       if (!room) return;

@@ -17,6 +17,7 @@ import {
   CardActionModal,
   DestroyCardModal,
   GameOverModal,
+  OnlineWaitingModal,
   ProgressTokenModal,
   RulesModal,
   WonderDraftModal,
@@ -48,6 +49,7 @@ export function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [myOnlineIdx, setMyOnlineIdx] = useState<0 | 1 | null>(null);
+  const [opponentJoined, setOpponentJoined] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState<string | null>(null);
 
   const closeSocket = useCallback(() => {
@@ -57,6 +59,7 @@ export function App() {
     }
     setRoomCode(null);
     setMyOnlineIdx(null);
+    setOpponentJoined(false);
   }, []);
 
   const applyAndSync = useCallback(
@@ -140,12 +143,30 @@ export function App() {
       if (msg.type === 'room_created') {
         setRoomCode(msg.code);
         setMyOnlineIdx(0);
-        setOnlineStatus(`방 생성됨! 코드: ${msg.code} (상대 대기 중...)`);
+        setOpponentJoined(false);
+        setOnlineStatus(`방 생성 완료! 친구에게 코드 [${msg.code}]를 공유하세요.`);
       } else if (msg.type === 'opponent_joined') {
-        setOnlineStatus('상대가 입장했습니다!');
+        setOpponentJoined(true);
+        setOnlineStatus(null);
+        setState((prev) => {
+          if (!prev) return prev;
+          const oppName = msg.playerName || prev.players[1].name;
+          const next: GameState = {
+            ...prev,
+            players: [
+              prev.players[0],
+              { ...prev.players[1], name: oppName },
+            ],
+          };
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'sync_state', state: next }));
+          }
+          return next;
+        });
       } else if (msg.type === 'room_joined') {
         setRoomCode(msg.code);
         setMyOnlineIdx(1);
+        setOpponentJoined(true);
         setState(msg.state);
         setOnlineStatus(null);
       } else if (msg.type === 'state_update') {
@@ -324,13 +345,25 @@ export function App() {
       )}
 
       {/* Modals */}
-      {state.phase === 'wonder_draft' && (
-        <WonderDraftModal
-          state={state}
-          canInteract={canInteract}
-          onPickWonder={(wId) => applyAndSync((s) => pickWonder(s, wId))}
+      {state.mode === 'online' && myOnlineIdx === 0 && !opponentJoined && (
+        <OnlineWaitingModal
+          roomCode={roomCode}
+          statusText={onlineStatus}
+          onCancel={() => {
+            closeSocket();
+            setState(null);
+          }}
         />
       )}
+
+      {state.phase === 'wonder_draft' &&
+        !(state.mode === 'online' && myOnlineIdx === 0 && !opponentJoined) && (
+          <WonderDraftModal
+            state={state}
+            canInteract={canInteract}
+            onPickWonder={(wId) => applyAndSync((s) => pickWonder(s, wId))}
+          />
+        )}
 
       {selectedSlot !== null && state.phase === 'playing' && canInteract && (
         <CardActionModal
