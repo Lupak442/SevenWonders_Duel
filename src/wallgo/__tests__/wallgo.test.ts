@@ -12,10 +12,12 @@ describe('Wall Go 2 Engine', () => {
   it('initializes 2-player and 3-player modes with correct setup order and wallBreakLeft', () => {
     const s2 = createInitialWallGoState({ mode: 'local', playerCount: 2 });
     expect(s2.phase).toBe('setup');
-    expect(s2.setupOrder).toEqual([0, 1, 1, 0, 0, 1, 1, 0]);
+    expect(s2.pieces).toHaveLength(4); // 2 Circle pieces per player pre-placed symmetrically
+    expect(s2.setupOrder).toEqual([0, 1, 1, 0]);
     expect(s2.players[0].wallBreakLeft).toBe(0);
 
     const s3 = createInitialWallGoState({ mode: 'local', playerCount: 3 });
+    expect(s3.pieces).toHaveLength(0);
     expect(s3.setupOrder).toEqual([0, 1, 2, 2, 1, 0]);
     expect(s3.players[0].wallBreakLeft).toBe(1);
     expect(s3.players[2].wallBreakLeft).toBe(1);

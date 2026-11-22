@@ -28,10 +28,11 @@ function addLog(
 
 function buildSnakeOrder(playerCount: 2 | 3): number[] {
   if (playerCount === 2) {
-    // 4 pieces each (8 total): 0,1,1,0, 0,1,1,0
-    return [0, 1, 1, 0, 0, 1, 1, 0];
+    // 2 Circle pieces per player are pre-placed at symmetric fixed positions;
+    // players place their remaining 2 Square pieces each in snake order: 0, 1, 1, 0
+    return [0, 1, 1, 0];
   }
-  // 2 pieces each (6 total): 0,1,2,2,1,0
+  // 3P: 2 pieces each (6 total): 0,1,2,2,1,0
   return [0, 1, 2, 2, 1, 0];
 }
 
@@ -53,6 +54,17 @@ export function createInitialWallGoState(options: {
 
   const setupOrder = buildSnakeOrder(playerCount);
 
+  // In 2-player mode, each player's 2 Circle pieces start at fixed symmetric positions
+  const initialPieces: WallGoPiece[] =
+    playerCount === 2
+      ? [
+          { id: 'p0_init_0', owner: 0, shape: 'circle', row: 1, col: 1 },
+          { id: 'p0_init_1', owner: 0, shape: 'circle', row: 5, col: 5 },
+          { id: 'p1_init_0', owner: 1, shape: 'circle', row: 1, col: 5 },
+          { id: 'p1_init_1', owner: 1, shape: 'circle', row: 5, col: 1 },
+        ]
+      : [];
+
   return {
     phase: 'setup',
     mode,
@@ -62,7 +74,7 @@ export function createInitialWallGoState(options: {
     currentPlayer: setupOrder[0],
     setupOrder,
     setupStep: 0,
-    pieces: [],
+    pieces: initialPieces,
     hWalls: createEmptyGrid(GRID_SIZE - 1, GRID_SIZE, false),
     vWalls: createEmptyGrid(GRID_SIZE, GRID_SIZE - 1, false),
     selectedPieceId: null,
@@ -73,13 +85,17 @@ export function createInitialWallGoState(options: {
     logs: [
       {
         id: 1,
-        text: `벽바둑 2 (${playerCount}인전) 시작! ${players[setupOrder[0]].name}부터 말을 배치하세요.`,
+        text:
+          playerCount === 2
+            ? `벽바둑 2 (2인전) 시작! 원형 말 2개씩 지정 배치 완료. ${players[setupOrder[0]].name}부터 사각 말(■)을 배치하세요.`
+            : `벽바둑 2 (3인전) 시작! ${players[setupOrder[0]].name}부터 말을 배치하세요.`,
       },
     ],
   };
 }
 
 export function getNextPlacementShape(state: WallGoState, playerId: number): PieceShape {
+  if (state.playerCount === 2) return 'square';
   const owned = state.pieces.filter((p) => p.owner === playerId);
   const squares = owned.filter((p) => p.shape === 'square').length;
   const circles = owned.filter((p) => p.shape === 'circle').length;
