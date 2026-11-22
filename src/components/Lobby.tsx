@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Bot, Globe, Landmark, Plus, Shield, Sparkles, Swords, Users } from 'lucide-react';
+import { BookOpen, Bot, Globe, Grid3X3, Landmark, Plus, Shield, Sparkles, Swords, Users } from 'lucide-react';
 import { AIDifficulty } from '../engine/types';
 
 interface LobbyProps {
@@ -16,6 +16,7 @@ interface LobbyProps {
   onCreateOnline: (serverUrl: string, playerName: string) => void;
   onJoinOnline: (serverUrl: string, roomCode: string, playerName: string) => void;
   onOpenRules: () => void;
+  onSwitchToWallGo: () => void;
   onlineStatus: string | null;
 }
 
@@ -37,6 +38,7 @@ export const Lobby: React.FC<LobbyProps> = ({
   onCreateOnline,
   onJoinOnline,
   onOpenRules,
+  onSwitchToWallGo,
   onlineStatus,
 }) => {
   const [difficulty, setDifficulty] = useState<AIDifficulty>('normal');
@@ -55,6 +57,14 @@ export const Lobby: React.FC<LobbyProps> = ({
 
   return (
     <div className="lobby-screen">
+      <button
+        type="button"
+        className="wg-top-switch-btn"
+        onClick={onSwitchToWallGo}
+      >
+        <Grid3X3 size={15} />
+        <span>벽바둑 2 하기</span>
+      </button>
       <div className="lobby-ambient-glow" aria-hidden="true" />
       <div className="lobby-card">
         <div className="lobby-badge-row">

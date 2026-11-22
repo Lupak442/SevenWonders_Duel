@@ -90,10 +90,13 @@ wss.on('connection', (ws) => {
 
     if (data.type === 'create_room') {
       const code = makeRoomCode();
-      rooms.set(code, { players: [ws, null], state: data.state ?? null });
+      const maxPlayers = data.maxPlayers === 3 ? 3 : 2;
+      const players = Array(maxPlayers).fill(null);
+      players[0] = ws;
+      rooms.set(code, { players, maxPlayers, state: data.state ?? null });
       currentRoom = code;
       playerIndex = 0;
-      send(ws, { type: 'room_created', code, playerIndex: 0 });
+      send(ws, { type: 'room_created', code, playerIndex: 0, maxPlayers });
     } else if (data.type === 'join_room') {
       const code = String(data.code || '').trim().toUpperCase();
       const room = rooms.get(code);
@@ -101,24 +104,43 @@ wss.on('connection', (ws) => {
         send(ws, { type: 'error', message: '방을 찾을 수 없습니다.' });
         return;
       }
-      if (room.players[1]) {
+      const openIdx = room.players.findIndex((p) => p === null);
+      if (openIdx === -1) {
         send(ws, { type: 'error', message: '방이 이미 가득 찼습니다.' });
         return;
       }
-      room.players[1] = ws;
+      room.players[openIdx] = ws;
       currentRoom = code;
-      playerIndex = 1;
-      send(ws, { type: 'room_joined', code, playerIndex: 1, state: room.state });
-      send(room.players[0], {
-        type: 'opponent_joined',
-        playerName: data.playerName || '상대 플레이어',
+      playerIndex = openIdx;
+      const joinedCount = room.players.filter(Boolean).length;
+      send(ws, {
+        type: 'room_joined',
+        code,
+        playerIndex: openIdx,
+        maxPlayers: room.maxPlayers,
+        joinedCount,
+        state: room.state,
+      });
+      room.players.forEach((p, idx) => {
+        if (p && idx !== openIdx) {
+          send(p, {
+            type: 'opponent_joined',
+            playerIndex: openIdx,
+            playerName: data.playerName || `플레이어 ${openIdx + 1}`,
+            joinedCount,
+            maxPlayers: room.maxPlayers,
+          });
+        }
       });
     } else if (data.type === 'sync_state') {
       const room = currentRoom ? rooms.get(currentRoom) : null;
       if (!room) return;
       room.state = data.state;
-      const other = room.players[playerIndex === 0 ? 1 : 0];
-      send(other, { type: 'state_update', state: data.state });
+      room.players.forEach((p, idx) => {
+        if (p && idx !== playerIndex) {
+          send(p, { type: 'state_update', state: data.state });
+        }
+      });
     }
   });
 
@@ -126,8 +148,11 @@ wss.on('connection', (ws) => {
     if (!currentRoom) return;
     const room = rooms.get(currentRoom);
     if (!room) return;
-    const other = room.players[playerIndex === 0 ? 1 : 0];
-    send(other, { type: 'opponent_left' });
+    room.players.forEach((p, idx) => {
+      if (p && idx !== playerIndex) {
+        send(p, { type: 'opponent_left', playerIndex });
+      }
+    });
     rooms.delete(currentRoom);
   });
 });

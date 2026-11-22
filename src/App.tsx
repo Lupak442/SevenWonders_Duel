@@ -24,6 +24,7 @@ import {
 } from './components/Modals';
 import { PlayerPanel } from './components/PlayerPanel';
 import { PyramidBoard } from './components/PyramidBoard';
+import { WallGoApp } from './wallgo/WallGoApp';
 import { performAITurn } from './engine/ai';
 import {
   buildCardFromDiscard,
@@ -40,6 +41,12 @@ import {
 import { AIDifficulty, GameState } from './engine/types';
 
 export function App() {
+  const initialHasWg =
+    typeof window !== 'undefined' &&
+    Boolean(new URLSearchParams(window.location.search).get('wg'));
+  const [activeGame, setActiveGame] = useState<'seven' | 'wallgo'>(
+    initialHasWg ? 'wallgo' : 'seven'
+  );
   const [state, setState] = useState<GameState | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [showRules, setShowRules] = useState(false);
@@ -218,6 +225,10 @@ export function App() {
     });
   };
 
+  if (activeGame === 'wallgo') {
+    return <WallGoApp onBackToSevenWonders={() => setActiveGame('seven')} />;
+  }
+
   if (!state) {
     return (
       <>
@@ -227,6 +238,7 @@ export function App() {
           onCreateOnline={handleCreateOnline}
           onJoinOnline={handleJoinOnline}
           onOpenRules={() => setShowRules(true)}
+          onSwitchToWallGo={() => setActiveGame('wallgo')}
           onlineStatus={onlineStatus}
         />
         {showRules && <RulesModal onClose={() => setShowRules(false)} />}
