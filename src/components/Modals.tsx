@@ -19,7 +19,7 @@ import { getCardBuildCost, getWonderBuildCost } from '../engine/cost';
 import { calculateScore } from '../engine/scoring';
 import { GameState, ResourceType } from '../engine/types';
 import { CardView } from './CardView';
-import { ResourceBadge } from './Icons';
+import { CHAIN_LABELS, ResourceBadge } from './Icons';
 import { WonderArtwork } from './Illustrations';
 
 interface CardActionModalProps {
@@ -414,8 +414,67 @@ export const GameOverModal: React.FC<{
   onRestart: () => void;
   onBackToLobby: () => void;
 }> = ({ state, onRestart, onBackToLobby }) => {
+  const [showDetails, setShowDetails] = useState(false);
   const s0 = calculateScore(state, 0);
   const s1 = calculateScore(state, 1);
+
+  const getPlayerScoreItems = (pIdx: 0 | 1) => {
+    const p = state.players[pIdx];
+    const opp = state.players[pIdx === 0 ? 1 : 0];
+    const items: { cat: string; name: string; pts: number }[] = [];
+
+    for (const cid of p.cards) {
+      const c = CARDS[cid];
+      if (!c) continue;
+      if (c.vp && (c.color === 'blue' || c.color === 'green' || c.color === 'yellow')) {
+        items.push({
+          cat: c.color === 'blue' ? '파랑' : c.color === 'green' ? '초록' : '노랑',
+          name: c.nameKo,
+          pts: c.vp,
+        });
+      } else if (c.color === 'purple' && c.guildVp) {
+        let pts = 0;
+        if (c.guildVp.type === 'mostColor' && c.guildVp.colors) {
+          const cols = c.guildVp.colors;
+          const pc = p.cards.filter((id) => cols.includes(CARDS[id]?.color)).length;
+          const oc = opp.cards.filter((id) => cols.includes(CARDS[id]?.color)).length;
+          pts = Math.max(pc, oc) * c.guildVp.vpPer;
+        } else if (c.guildVp.type === 'mostWonders') {
+          const pw = p.wonders.filter((w) => w.built).length;
+          const ow = opp.wonders.filter((w) => w.built).length;
+          pts = Math.max(pw, ow) * c.guildVp.vpPer;
+        } else if (c.guildVp.type === 'coins') {
+          pts = Math.floor(Math.max(p.coins, opp.coins) / 3) * c.guildVp.vpPer;
+        }
+        items.push({ cat: '길드', name: c.nameKo, pts });
+      }
+    }
+
+    for (const w of p.wonders) {
+      if (w.built) {
+        const wd = WONDERS[w.wonderId];
+        if (wd?.vp) items.push({ cat: '불가사의', name: wd.nameKo, pts: wd.vp });
+      }
+    }
+
+    for (const ptId of p.progressTokens) {
+      const pt = PROGRESS_TOKENS[ptId];
+      const pts =
+        ptId === 'pt_agriculture'
+          ? 4
+          : ptId === 'pt_philosophy'
+            ? 7
+            : ptId === 'pt_mathematics'
+              ? 3 * p.progressTokens.length
+              : 0;
+      if (pts > 0 && pt) items.push({ cat: '진보', name: pt.nameKo, pts });
+    }
+
+    const sc = pIdx === 0 ? s0 : s1;
+    if (sc.military > 0) items.push({ cat: '군사', name: '군사력 트랙', pts: sc.military });
+    if (sc.coins > 0) items.push({ cat: '코인', name: `${p.coins}코인 (÷3)`, pts: sc.coins });
+    return items;
+  };
 
   const victoryTitle =
     state.victoryType === 'military'
@@ -487,6 +546,40 @@ export const GameOverModal: React.FC<{
             </tr>
           </tbody>
         </table>
+
+        <button
+          type="button"
+          className="score-details-toggle"
+          onClick={() => setShowDetails((v) => !v)}
+        >
+          {showDetails ? '▲ 점수 상세 내역 접기' : '▼ 어떻게 합산되었나요? 점수 상세 내역 보기'}
+        </button>
+
+        {showDetails && (
+          <div className="score-details-grid">
+            {([0, 1] as const).map((pIdx) => {
+              const items = getPlayerScoreItems(pIdx);
+              return (
+                <div key={pIdx} className="sd-col">
+                  <div className="sd-head">{state.players[pIdx].name}</div>
+                  {items.length === 0 ? (
+                    <div className="sd-empty">점수 항목 없음</div>
+                  ) : (
+                    <ul className="sd-list">
+                      {items.map((it, idx) => (
+                        <li key={idx}>
+                          <span className="sd-cat">{it.cat}</span>
+                          <span className="sd-name">{it.name}</span>
+                          <strong className="sd-pts">+{it.pts}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="gameover-actions">
           <button type="button" className="action-btn btn-build" onClick={onRestart}>
@@ -582,7 +675,16 @@ export const OnlineWaitingModal: React.FC<{
 };
 
 export const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [tab, setTab] = useState<'basics' | 'cards' | 'tokens' | 'wonders' | 'tips'>('basics');
+  const [tab, setTab] = useState<'basics' | 'cards' | 'chains' | 'tokens' | 'wonders' | 'tips'>(
+    'basics'
+  );
+
+  // Group chain symbols -> { fromCards, toCards }
+  const chainEntries = Object.entries(CHAIN_LABELS).map(([sym, labelKo]) => {
+    const fromCards = Object.values(CARDS).filter((c) => c.chainTo === sym);
+    const toCards = Object.values(CARDS).filter((c) => c.chainFrom === sym);
+    return { sym, labelKo, fromCards, toCards };
+  });
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -616,6 +718,13 @@ export const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             onClick={() => setTab('cards')}
           >
             카드 색상별 역할
+          </button>
+          <button
+            type="button"
+            className={`rtab ${tab === 'chains' ? 'active' : ''}`}
+            onClick={() => setTab('chains')}
+          >
+            연쇄 테크
           </button>
           <button
             type="button"
@@ -692,63 +801,115 @@ export const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
           {tab === 'cards' && (
             <div className="color-guide-grid">
-              <div className="cg-card cg-brown">
-                <div className="cg-head">🟤 갈색 (원자재) & ⚪ 회색 (제조품)</div>
-                <p>
-                  <strong>목재·진흙·석재(갈색)</strong>와 <strong>유리·파피루스(회색)</strong>를 매 턴 자동 생산합니다.
-                </p>
-                <p className="cg-why">
-                  <strong>왜 모아야 하나요?</strong> 내가 자원을 많이 생산할수록 건물·불가사의 건설비가 <strong>무료</strong>에 가까워지고, 반대로 <strong>상대가 무역할 때 내야 하는 코인(2 + 내 생산량)</strong>이 폭등해 상대를 가난하게 만듭니다!
-                </p>
+              <div className="cg-card cg-brown cg-with-sample">
+                <div className="cg-sample-card">
+                  <CardView card={CARDS.a1_lumber_yard} compact />
+                </div>
+                <div>
+                  <div className="cg-head">🟤 갈색 (원자재) & ⚪ 회색 (제조품)</div>
+                  <p>
+                    <strong>목재·진흙·석재(갈색)</strong>와 <strong>유리·파피루스(회색)</strong>를 매 턴 자동 생산합니다.
+                  </p>
+                  <p className="cg-why">
+                    <strong>왜 모아야 하나요?</strong> 내 건설비가 <strong>무료</strong>에 가까워지고, <strong>상대가 무역할 때 내야 하는 코인(2 + 내 생산량)</strong>이 폭등합니다!
+                  </p>
+                </div>
               </div>
 
-              <div className="cg-card cg-red">
-                <div className="cg-head">🔴 빨간 카드 (군사)</div>
-                <p>
-                  건설 시 <strong>방패(🛡️)</strong>를 얻어 분쟁 말을 상대 진영 쪽으로 밉니다. 상대 끝(<strong>±9</strong>)에 도달하면 <strong>즉시 군사 승리!</strong>
-                </p>
-                <p className="cg-why">
-                  <strong>핵심 룰:</strong> 말은 <strong>±3, ±6 구간</strong>을 처음 돌파할 때 상대 코인을 각각 <strong>-2코인, -5코인 압수</strong>(최초 1회)하며, 게임 종료 시 위치에 따라 <strong>+2 / +5 / +10점</strong>의 추가 승점을 줍니다.
-                </p>
+              <div className="cg-card cg-red cg-with-sample">
+                <div className="cg-sample-card">
+                  <CardView card={CARDS.a1_guard_tower} compact />
+                </div>
+                <div>
+                  <div className="cg-head">🔴 빨간 카드 (군사)</div>
+                  <p>
+                    <strong>방패(🛡️)</strong>로 분쟁 말을 상대 끝(<strong>±9</strong>)까지 밀면 <strong>즉시 군사 승리!</strong>
+                  </p>
+                  <p className="cg-why">
+                    <strong>핵심 룰:</strong> <strong>±3, ±6 돌파 시</strong> 상대 코인 <strong>-2 / -5 압수</strong>, 종료 시 위치에 따라 <strong>+2 / +5 / +10점</strong>!
+                  </p>
+                </div>
               </div>
 
-              <div className="cg-card cg-green">
-                <div className="cg-head">🟢 초록 카드 (과학)</div>
-                <p>
-                  카드마다 고유한 <strong>과학 상징</strong>(총 7종, 기본 6종은 2장씩 + 법학 진보 토큰 1종)이 그려져 있습니다.
-                </p>
-                <p className="cg-why">
-                  <strong>핵심 룰:</strong> 서로 다른 <strong>6종류</strong>를 모으면 <strong>즉시 과학 승리!</strong> 또한 <strong>같은 종류를 2개(한 쌍)</strong> 모을 때마다 보드 위의 <strong>진보 토큰 1개</strong>를 즉시 획득합니다.
-                </p>
+              <div className="cg-card cg-green cg-with-sample">
+                <div className="cg-sample-card">
+                  <CardView card={CARDS.a1_workshop} compact />
+                </div>
+                <div>
+                  <div className="cg-head">🟢 초록 카드 (과학)</div>
+                  <p>
+                    서로 다른 과학 상징 <strong>6종류</strong>를 모으면 <strong>즉시 과학 승리!</strong>
+                  </p>
+                  <p className="cg-why">
+                    <strong>핵심 룰:</strong> <strong>같은 상징 2개(한 쌍)</strong>를 모을 때마다 보드의 <strong>진보 토큰 1개</strong>를 획득합니다.
+                  </p>
+                </div>
               </div>
 
-              <div className="cg-card cg-yellow">
-                <div className="cg-head">🟡 금색 / 노란 카드 (상업)</div>
-                <p>
-                  즉시 코인을 주거나, 특정 자원의 <strong>무역 비용을 무조건 1코인으로 고정 할인</strong>해 줍니다.
-                </p>
-                <p className="cg-why">
-                  <strong>왜 좋은가요?</strong> 노란 카드가 많을수록 카드를 버릴 때 얻는 코인(<code>2 + 노란 카드 수</code>)이 늘어나고, 부족한 자원을 1코인씩만 내고 헐값에 사올 수 있어 경제력이 압도적으로 좋아집니다.
-                </p>
+              <div className="cg-card cg-yellow cg-with-sample">
+                <div className="cg-sample-card">
+                  <CardView card={CARDS.a1_tavern} compact />
+                </div>
+                <div>
+                  <div className="cg-head">🟡 금색 / 노란 카드 (상업)</div>
+                  <p>
+                    즉시 코인을 주거나 특정 자원의 <strong>무역 비용을 1코인으로 고정 할인</strong>합니다.
+                  </p>
+                  <p className="cg-why">
+                    <strong>왜 좋은가요?</strong> 노란 카드가 많을수록 카드 판매 시 얻는 코인(<code>2 + 노란 수</code>)이 늘어납니다!
+                  </p>
+                </div>
               </div>
 
-              <div className="cg-card cg-blue">
-                <div className="cg-head">🔵 파란 카드 (시민)</div>
-                <p>
-                  특수 기능은 없지만 가장 <strong>높은 순수 승점(3~8점)</strong>을 제공합니다.
-                </p>
-                <p className="cg-why">
-                  <strong>왜 필요한가요?</strong> 군사·과학 승리가 나오지 않아 3시대 점수 대결로 갈 경우 승부를 가르는 핵심 점수원입니다.
-                </p>
+              <div className="cg-card cg-blue cg-with-sample">
+                <div className="cg-sample-card">
+                  <CardView card={CARDS.a1_baths} compact />
+                </div>
+                <div>
+                  <div className="cg-head">🔵 파란 카드 (시민)</div>
+                  <p>
+                    특수 기능은 없지만 가장 높은 <strong>순수 승점(3~8점)</strong>을 제공합니다.
+                  </p>
+                  <p className="cg-why">
+                    <strong>핵심 룰:</strong> 3시대 점수 대결(동점 시 파랑 점수 우선 판정)의 핵심입니다.
+                  </p>
+                </div>
               </div>
 
-              <div className="cg-card cg-purple">
-                <div className="cg-head">🟣 보라 카드 (길드 — 제3시대 전용)</div>
-                <p>
-                  제3시대에만 무작위로 3장이 등장하며, 양 플레이어 중 특정 색상 카드 수·불가사의 수·코인에 비례해 <strong>폭발적인 보너스 승점 + 코인</strong>을 줍니다.
-                </p>
+              <div className="cg-card cg-purple cg-with-sample">
+                <div className="cg-sample-card">
+                  <CardView card={CARDS.g_merchants} compact />
+                </div>
+                <div>
+                  <div className="cg-head">🟣 보라 카드 (길드 — 3시대)</div>
+                  <p>
+                    카드 중앙의 <strong>미니 색상/아이콘</strong> 기준으로 <strong>나와 상대 중 더 많은 쪽</strong>만큼 즉시 코인 & 종료 시 승점을 줍니다!
+                  </p>
+                </div>
               </div>
             </div>
+          )}
+
+          {tab === 'chains' && (
+            <>
+              <p className="rule-lead">
+                이전 시대 카드의 오른쪽 아래(<strong>➡ 상징</strong>)를 미리 지어두면, 다음 시대 카드의 왼쪽 아래(<strong>🔗 상징</strong>)와 연결되어 <strong>자원·코인 없이 무료로 건설</strong>할 수 있습니다!
+              </p>
+              <div className="chain-tree-grid">
+                {chainEntries.map((ch) => (
+                  <div key={ch.sym} className="chain-tree-item">
+                    <span className="ct-sym">🔗 {ch.labelKo}</span>
+                    <span className="ct-from">
+                      {ch.fromCards.map((c) => `(${c.age}시대) ${c.nameKo}`).join(', ')}
+                    </span>
+                    <span className="ct-arrow">➡ 무료 ➡</span>
+                    <span className="ct-to">
+                      {ch.toCards.map((c) => `(${c.age}시대) ${c.nameKo}`).join(', ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           {tab === 'tokens' && (

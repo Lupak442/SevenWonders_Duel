@@ -22,9 +22,30 @@ import {
   getDistinctScienceCount,
   getScienceSymbolCounts,
 } from '../engine/scoring';
-import { CardColor, GameState, PlayerState, ResourceType, ScienceSymbol } from '../engine/types';
-import { ResourceBadge, SCIENCE_META } from './Icons';
+import { CardColor, CardDef, GameState, PlayerState, ResourceType, ScienceSymbol } from '../engine/types';
+import { CHAIN_LABELS, RESOURCE_META, ResourceBadge, SCIENCE_META } from './Icons';
 import { ScienceIcon, WonderArtwork } from './Illustrations';
+
+function getShortCardEffect(c: CardDef): string {
+  const parts: string[] = [];
+  if (c.produces) {
+    for (const [r, cnt] of Object.entries(c.produces) as [ResourceType, number][]) {
+      parts.push(`${RESOURCE_META[r].labelKo}${cnt}`);
+    }
+  }
+  if (c.flexibleProduces) {
+    parts.push(c.flexibleProduces.map((r) => RESOURCE_META[r].labelKo).join('/'));
+  }
+  if (c.tradingDiscount) {
+    parts.push(`${c.tradingDiscount.map((r) => RESOURCE_META[r].labelKo).join('/')}1🪙`);
+  }
+  if (c.shields) parts.push(`🛡️${c.shields}`);
+  if (c.science) parts.push(SCIENCE_META[c.science].emoji);
+  if (c.vp) parts.push(`★${c.vp}`);
+  if (c.coins) parts.push(`+${c.coins}🪙`);
+  if (c.chainTo) parts.push(`🔗${CHAIN_LABELS[c.chainTo]}`);
+  return parts.join(' ');
+}
 
 interface PlayerPanelProps {
   state: GameState;
@@ -235,11 +256,15 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                   {COLOR_LABELS[color]} <em>{group.length}</em>
                 </span>
                 <div className="stack-names">
-                  {group.map((c, i) => (
-                    <span key={`${c.id}-${i}`} className="stack-chip">
-                      {c.nameKo}
-                    </span>
-                  ))}
+                  {group.map((c, i) => {
+                    const eff = getShortCardEffect(c);
+                    return (
+                      <span key={`${c.id}-${i}`} className="stack-chip" title={eff}>
+                        <span>{c.nameKo}</span>
+                        {eff && <em className="stack-eff">{eff}</em>}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             );

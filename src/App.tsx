@@ -5,7 +5,6 @@ import {
   Hourglass,
   Landmark,
   ScrollText,
-  Sparkles,
   Swords,
   X,
 } from 'lucide-react';
@@ -307,6 +306,37 @@ export function App() {
         </div>
       </header>
 
+      {/* Sticky Recent 3 Actions Feed (always visible at top while scrolling) */}
+      {state.logs.length > 0 && (
+        <div className="sticky-action-feed" aria-live="polite">
+          {state.logs.slice(0, 3).map((log, idx) => {
+            const tag =
+              log.text.includes('불가사의')
+                ? { label: '불가사의', cls: 'tag-wonder' }
+                : log.text.includes('버리고') || log.text.includes('판매')
+                  ? { label: '판매', cls: 'tag-sell' }
+                  : log.text.includes('건설')
+                    ? { label: '건설', cls: 'tag-build' }
+                    : log.text.includes('군사') || log.text.includes('패권')
+                      ? { label: '군사', cls: 'tag-mil' }
+                      : { label: '진행', cls: 'tag-info' };
+            const isSelfLog = log.player === selfIdx;
+            const isOppLog = log.player === oppIdx;
+            return (
+              <div
+                key={log.id}
+                className={`saf-item ${idx === 0 ? 'is-newest' : ''} ${
+                  isSelfLog ? 'by-self' : isOppLog ? 'by-opp' : ''
+                }`}
+              >
+                <span className={`saf-badge ${tag.cls}`}>{tag.label}</span>
+                <span className="saf-text">{log.text}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Conflict Track & Progress Tokens */}
       <ConflictTrack state={state} />
 
@@ -321,13 +351,6 @@ export function App() {
 
         <section className="center-board">
           <ComparisonBar state={state} selfIdx={selfIdx} oppIdx={oppIdx} />
-
-          {state.logs[0] && (
-            <div className="latest-log-ticker">
-              <Sparkles size={13} className="ticker-icon" />
-              <span>{state.logs[0].text}</span>
-            </div>
-          )}
 
           <PyramidBoard
             state={state}

@@ -536,6 +536,62 @@ button {
   font-size: 10px;
 }
 
+/* ======================== STICKY ACTION FEED ======================== */
+.sticky-action-feed {
+  position: sticky;
+  top: 6px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(7, 11, 20, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-gold);
+  border-radius: 14px;
+  padding: 6px 10px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+}
+
+.saf-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  padding: 2px 6px;
+  border-radius: 7px;
+  border-left: 3px solid transparent;
+}
+
+.saf-item.is-newest {
+  color: #f8fafc;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.saf-item.by-self { border-left-color: #60a5fa; }
+.saf-item.by-opp { border-left-color: #f87171; }
+
+.saf-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.tag-wonder { background: rgba(234, 179, 8, 0.25); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.5); }
+.tag-sell { background: rgba(245, 158, 11, 0.22); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); }
+.tag-build { background: rgba(59, 130, 246, 0.22); color: #93c5fd; border: 1px solid rgba(96, 165, 250, 0.45); }
+.tag-mil { background: rgba(239, 68, 68, 0.24); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.5); }
+.tag-info { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+
+.saf-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ======================== CONFLICT STRIP ======================== */
 .conflict-strip {
   display: grid;
@@ -1772,11 +1828,21 @@ button {
 }
 
 .stack-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 2px 6px;
   border-radius: 5px;
   font-size: 10px;
+}
+
+.stack-eff {
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--gold-light);
+  opacity: 0.9;
 }
 
 .empty-hint {
@@ -2379,6 +2445,129 @@ button {
 @media (max-width: 640px) {
   .color-guide-grid,
   .guide-item-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.score-details-toggle {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--gold-light);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.score-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.sd-col {
+  background: rgba(7, 11, 20, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.sd-head {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 4px;
+}
+
+.sd-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.sd-list li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sd-cat {
+  font-size: 9.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.sd-name {
+  flex: 1;
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sd-pts {
+  color: #86efac;
+}
+
+.sd-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cg-with-sample {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cg-sample-card {
+  flex-shrink: 0;
+  transform: scale(0.84);
+  transform-origin: top left;
+  margin-right: -14px;
+  margin-bottom: -18px;
+}
+
+.chain-tree-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.chain-tree-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  background: rgba(7, 11, 20, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+}
+
+.ct-sym {
+  font-weight: 800;
+  color: var(--gold-light);
+  min-width: 72px;
+}
+
+.ct-from { color: #cbd5e1; }
+.ct-arrow { color: #4ade80; font-weight: 800; font-size: 10.5px; }
+.ct-to { color: #93c5fd; font-weight: 700; }
+
+@media (max-width: 640px) {
+  .score-details-grid {
     grid-template-columns: 1fr;
   }
 }
