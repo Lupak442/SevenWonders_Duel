@@ -958,9 +958,20 @@ button {
   font-weight: 700;
 }
 
-.zoom-btn:hover {
+.aed-live {
+  margin-top: 5px;
+  font-weight: 800;
+  color: #fde047;
+}
+
+.zoom-btn.is-active {
   border-color: var(--gold);
+  background: rgba(234, 179, 8, 0.22);
   color: var(--gold-light);
+}
+
+.cmp-stat.time {
+  color: #7dd3fc;
 }
 
 .pyramid-wrapper {

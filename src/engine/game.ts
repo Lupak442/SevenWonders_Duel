@@ -123,6 +123,7 @@ export function createInitialGameState(options: {
     nextAgeStarterChooser: null,
     winner: null,
     victoryType: null,
+    playerTimesSec: [0, 0],
     logs: [
       {
         id: 1,
@@ -431,10 +432,18 @@ function resolveEndOfTurn(state: GameState, lastPlayer: 0 | 1): GameState {
       else if (s1.total > s0.total) winner = 1;
       else if (s0.blue > s1.blue) winner = 0;
       else if (s1.blue > s0.blue) winner = 1;
+      else if (state.playerTimesSec[0] < state.playerTimesSec[1]) winner = 0;
+      else if (state.playerTimesSec[1] < state.playerTimesSec[0]) winner = 1;
 
+      const tieNote =
+        s0.total === s1.total && winner !== null
+          ? s0.blue !== s1.blue
+            ? ' [파랑 승점 판정]'
+            : ' [누적 시간 판정]'
+          : '';
       const winMsg =
         winner !== null
-          ? `🏛️ 제3시대 종료! ${state.players[winner].name} 시민 승리 (${s0.total} vs ${s1.total})`
+          ? `🏛️ 제3시대 종료! ${state.players[winner].name} 시민 승리 (${s0.total} vs ${s1.total})${tieNote}`
           : `🏛️ 제3시대 종료! 무승부 (${s0.total} vs ${s1.total})`;
       const logs = addLog(state, winMsg, winner ?? undefined);
 

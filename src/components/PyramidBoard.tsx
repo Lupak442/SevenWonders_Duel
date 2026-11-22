@@ -33,17 +33,17 @@ export const PyramidBoard: React.FC<PyramidBoardProps> = ({
   useEffect(() => {
     const updateFit = () => {
       if (!wrapperRef.current) return;
-      const avail = wrapperRef.current.clientWidth;
-      if (avail > 0 && avail < STAGE_WIDTH) {
-        setFitScale(Math.max(0.48, (avail - 8) / STAGE_WIDTH));
-      } else {
-        setFitScale(1);
-      }
+      const availW = wrapperRef.current.clientWidth;
+      const availH = Math.max(220, window.innerHeight - 300);
+      const scaleW = availW > 0 ? (availW - 8) / STAGE_WIDTH : 1;
+      const scaleH = availH / stageHeight;
+      const bestFit = Math.min(1, scaleW, scaleH);
+      setFitScale(Math.max(0.42, bestFit));
     };
     updateFit();
     window.addEventListener('resize', updateFit);
     return () => window.removeEventListener('resize', updateFit);
-  }, []);
+  }, [stageHeight]);
 
   const effectiveScale = Math.min(1.5, Math.max(0.45, fitScale * userZoom));
 
@@ -80,9 +80,25 @@ export const PyramidBoard: React.FC<PyramidBoardProps> = ({
       <div className="pyramid-zoom-controls">
         <button
           type="button"
+          className={`zoom-btn ${Math.round(effectiveScale * 100) === 45 ? 'is-active' : ''}`}
+          title="45%로 보기"
+          onClick={() => setUserZoom(0.45 / fitScale)}
+        >
+          45%
+        </button>
+        <button
+          type="button"
+          className={`zoom-btn ${Math.round(effectiveScale * 100) === 75 ? 'is-active' : ''}`}
+          title="75%로 보기"
+          onClick={() => setUserZoom(0.75 / fitScale)}
+        >
+          75%
+        </button>
+        <button
+          type="button"
           className="zoom-btn"
           title="축소"
-          onClick={() => setUserZoom((z) => Math.max(0.75, +(z - 0.15).toFixed(2)))}
+          onClick={() => setUserZoom((z) => Math.max(0.45 / fitScale, +(z - 0.15).toFixed(2)))}
         >
           <ZoomOut size={13} />
         </button>
@@ -93,13 +109,13 @@ export const PyramidBoard: React.FC<PyramidBoardProps> = ({
           onClick={() => setUserZoom(1)}
         >
           <Maximize2 size={11} />
-          <span>{Math.round(effectiveScale * 100)}%</span>
+          <span>맞춤 ({Math.round(effectiveScale * 100)}%)</span>
         </button>
         <button
           type="button"
           className="zoom-btn"
           title="확대"
-          onClick={() => setUserZoom((z) => Math.min(1.8, +(z + 0.15).toFixed(2)))}
+          onClick={() => setUserZoom((z) => Math.min(1.6 / fitScale, +(z + 0.15).toFixed(2)))}
         >
           <ZoomIn size={13} />
         </button>

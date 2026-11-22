@@ -68,30 +68,52 @@ export const CardActionModal: React.FC<CardActionModalProps> = ({
           <CardView card={card} costInfo={cardCost} playable />
         </div>
 
-        {card.guildVp && (
-          <div className="action-effect-desc">
-            <strong>길드 효과:</strong>{' '}
-            {card.guildVp.type === 'mostWonders'
-              ? `나와 상대 중 완공된 불가사의가 더 많은 쪽 개수 × ${card.guildVp.vpPer}점`
-              : card.guildVp.type === 'coins'
-                ? `나와 상대 중 보유 코인이 더 많은 쪽의 3코인당 +${card.guildVp.vpPer}점`
-                : `나와 상대 중 [${card.guildVp.colors
-                    ?.map((c) =>
-                      c === 'yellow'
-                        ? '노란색'
-                        : c === 'blue'
-                          ? '파란색'
-                          : c === 'green'
-                            ? '초록색'
-                            : c === 'red'
-                              ? '빨간색'
-                              : c === 'brown'
-                                ? '갈색'
-                                : '회색'
-                    )
-                    .join(' + ')}] 카드를 더 많이 가진 쪽 장수만큼 즉시 +1코인 & 종료 시 +${card.guildVp.vpPer}점`}
-          </div>
-        )}
+        {card.guildVp && (() => {
+          let desc = '';
+          let preview = '';
+          if (card.guildVp.type === 'mostWonders') {
+            const pW = player.wonders.filter((w) => w.built).length;
+            const oW = opponent.wonders.filter((w) => w.built).length;
+            const best = Math.max(pW, oW);
+            desc = `나와 상대 중 완공된 불가사의가 더 많은 쪽 개수 × ${card.guildVp.vpPer}점`;
+            preview = `현재 나 ${pW}개 vs 상대 ${oW}개 → 지금 지으면 예상 +${best * card.guildVp.vpPer}점`;
+          } else if (card.guildVp.type === 'coins') {
+            const maxC = Math.max(player.coins, opponent.coins);
+            const pts = Math.floor(maxC / 3) * card.guildVp.vpPer;
+            desc = `코인을 내는 것이 아니라, 게임 종료 시 나와 상대 중 보유 코인이 더 많은 쪽의 3코인마다 +${card.guildVp.vpPer}점!`;
+            preview = `현재 나 ${player.coins}코인 vs 상대 ${opponent.coins}코인 → 최고 ${maxC}코인 기준 예상 +${pts}점`;
+          } else {
+            const colors = card.guildVp.colors ?? [];
+            const pC = player.cards.filter((id) => colors.includes(CARDS[id]?.color)).length;
+            const oC = opponent.cards.filter((id) => colors.includes(CARDS[id]?.color)).length;
+            const best = Math.max(pC, oC);
+            const colorLabel = colors
+              .map((c) =>
+                c === 'yellow'
+                  ? '노란색'
+                  : c === 'blue'
+                    ? '파란색'
+                    : c === 'green'
+                      ? '초록색'
+                      : c === 'red'
+                        ? '빨간색'
+                        : c === 'brown'
+                          ? '갈색'
+                          : '회색'
+              )
+              .join(' + ');
+            desc = `나와 상대 중 [${colorLabel}] 카드를 더 많이 가진 쪽 장수만큼 즉시 +1코인 & 종료 시 +${card.guildVp.vpPer}점`;
+            preview = `현재 나 ${pC}장 vs 상대 ${oC}장 → 지금 지으면 즉시 +${best}코인 · 예상 +${best * card.guildVp.vpPer}점`;
+          }
+          return (
+            <div className="action-effect-desc">
+              <div>
+                <strong>길드 효과:</strong> {desc}
+              </div>
+              <div className="aed-live">{preview}</div>
+            </div>
+          );
+        })()}
 
         <div className="action-buttons-col">
           {/* 1. Build Building */}
@@ -449,6 +471,15 @@ export const GameOverModal: React.FC<{
                 <td className={state.winner === 1 ? 'winner-col' : ''}>{s1[r.k]}</td>
               </tr>
             ))}
+            <tr>
+              <td>누적 시간 (동점 시 판정)</td>
+              <td className={state.winner === 0 ? 'winner-col' : ''}>
+                {`${String(Math.floor((state.playerTimesSec?.[0] ?? 0) / 60)).padStart(2, '0')}:${String((state.playerTimesSec?.[0] ?? 0) % 60).padStart(2, '0')}`}
+              </td>
+              <td className={state.winner === 1 ? 'winner-col' : ''}>
+                {`${String(Math.floor((state.playerTimesSec?.[1] ?? 0) / 60)).padStart(2, '0')}:${String((state.playerTimesSec?.[1] ?? 0) % 60).padStart(2, '0')}`}
+              </td>
+            </tr>
             <tr className="total-row">
               <td>총점</td>
               <td className={state.winner === 0 ? 'winner-col' : ''}>{s0.total}</td>

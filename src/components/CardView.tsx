@@ -169,8 +169,8 @@ export const CardView: React.FC<CardViewProps> = ({
                   </span>
                 )}
                 {card.guildVp.type === 'coins' && (
-                  <span className="mini-coins-chip" title="3코인당">
-                    3<CoinIcon size={10} />
+                  <span className="mini-coins-chip" title="보유 3코인당">
+                    보유3<CoinIcon size={10} />
                   </span>
                 )}
                 {card.guildVp.type === 'mostColor' &&

@@ -91,6 +91,23 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [state]);
 
+  // Per-player Elapsed Time Counter (1s tick)
+  const isOnlineWaiting =
+    state?.mode === 'online' && myOnlineIdx === 0 && !opponentJoined;
+  const activePhase = state?.phase;
+  useEffect(() => {
+    if (!activePhase || activePhase === 'game_over' || isOnlineWaiting) return;
+    const id = window.setInterval(() => {
+      setState((prev) => {
+        if (!prev || prev.phase === 'game_over') return prev;
+        const times: [number, number] = [...prev.playerTimesSec] as [number, number];
+        times[prev.currentPlayer] += 1;
+        return { ...prev, playerTimesSec: times };
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [activePhase, isOnlineWaiting]);
+
   const handleStartAI = (
     difficulty: AIDifficulty,
     playerName: string,

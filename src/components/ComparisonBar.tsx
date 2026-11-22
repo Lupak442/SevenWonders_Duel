@@ -1,5 +1,5 @@
 import React from 'react';
-import { Coins, FlaskConical, Landmark, Sparkles } from 'lucide-react';
+import { Clock, Coins, FlaskConical, Landmark, Sparkles } from 'lucide-react';
 import { ALL_RESOURCES, getFixedProduction } from '../engine/cost';
 import {
   calculateScore,
@@ -14,6 +14,12 @@ interface ComparisonBarProps {
   state: GameState;
   selfIdx: 0 | 1;
   oppIdx: 0 | 1;
+}
+
+function formatTime(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 export const ComparisonBar: React.FC<ComparisonBarProps> = ({
@@ -60,6 +66,9 @@ export const ComparisonBar: React.FC<ComparisonBarProps> = ({
           <span className="cmp-stat" title="미완공 불가사의">
             <Landmark size={11} /> {selfUnbuilt}
           </span>
+          <span className="cmp-stat time" title="누적 사용 시간 (동점 시 짧은 쪽 승리)">
+            <Clock size={11} /> {formatTime(state.playerTimesSec?.[selfIdx] ?? 0)}
+          </span>
         </div>
 
         <div className="cmp-mid-row">
@@ -105,6 +114,9 @@ export const ComparisonBar: React.FC<ComparisonBarProps> = ({
           </span>
           <span className="cmp-stat" title="상대 미완공 불가사의">
             <Landmark size={11} /> {oppUnbuilt}
+          </span>
+          <span className="cmp-stat time" title="상대 누적 사용 시간">
+            <Clock size={11} /> {formatTime(state.playerTimesSec?.[oppIdx] ?? 0)}
           </span>
         </div>
 

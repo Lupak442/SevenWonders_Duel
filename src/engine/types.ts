@@ -164,6 +164,7 @@ export interface GameState {
   nextAgeStarterChooser: 0 | 1 | null;
   winner: 0 | 1 | null;
   victoryType: VictoryType | null;
+  playerTimesSec: [number, number];
   logs: LogEntry[];
   turnCount: number;
 }
