@@ -92,8 +92,16 @@ wss.on('connection', (ws) => {
       const code = makeRoomCode();
       const maxPlayers = data.maxPlayers === 3 ? 3 : 2;
       const players = Array(maxPlayers).fill(null);
+      const playerNames = Array(maxPlayers).fill(null);
       players[0] = ws;
-      rooms.set(code, { players, maxPlayers, state: data.state ?? null });
+      playerNames[0] = data.state?.players?.[0]?.name || '호스트';
+      rooms.set(code, {
+        players,
+        playerNames,
+        maxPlayers,
+        state: data.state ?? null,
+        cleanupTimer: null,
+      });
       currentRoom = code;
       playerIndex = 0;
       send(ws, { type: 'room_created', code, playerIndex: 0, maxPlayers });
@@ -104,29 +112,45 @@ wss.on('connection', (ws) => {
         send(ws, { type: 'error', message: '방을 찾을 수 없습니다.' });
         return;
       }
-      const openIdx = room.players.findIndex((p) => p === null);
-      if (openIdx === -1) {
+      if (room.cleanupTimer) {
+        clearTimeout(room.cleanupTimer);
+        room.cleanupTimer = null;
+      }
+
+      const incomingName = (data.playerName || '').trim();
+      // Prefer reconnecting into the exact seat matching playerName if disconnected
+      let targetIdx = room.players.findIndex(
+        (p, idx) => p === null && incomingName && room.playerNames[idx] === incomingName
+      );
+      if (targetIdx === -1) {
+        targetIdx = room.players.findIndex((p) => p === null);
+      }
+      if (targetIdx === -1) {
         send(ws, { type: 'error', message: '방이 이미 가득 찼습니다.' });
         return;
       }
-      room.players[openIdx] = ws;
+
+      room.players[targetIdx] = ws;
+      if (incomingName) {
+        room.playerNames[targetIdx] = incomingName;
+      }
       currentRoom = code;
-      playerIndex = openIdx;
+      playerIndex = targetIdx;
       const joinedCount = room.players.filter(Boolean).length;
       send(ws, {
         type: 'room_joined',
         code,
-        playerIndex: openIdx,
+        playerIndex: targetIdx,
         maxPlayers: room.maxPlayers,
         joinedCount,
         state: room.state,
       });
       room.players.forEach((p, idx) => {
-        if (p && idx !== openIdx) {
+        if (p && idx !== targetIdx) {
           send(p, {
             type: 'opponent_joined',
-            playerIndex: openIdx,
-            playerName: data.playerName || `플레이어 ${openIdx + 1}`,
+            playerIndex: targetIdx,
+            playerName: room.playerNames[targetIdx] || `플레이어 ${targetIdx + 1}`,
             joinedCount,
             maxPlayers: room.maxPlayers,
           });
@@ -148,12 +172,24 @@ wss.on('connection', (ws) => {
     if (!currentRoom) return;
     const room = rooms.get(currentRoom);
     if (!room) return;
+    if (playerIndex >= 0 && room.players[playerIndex] === ws) {
+      room.players[playerIndex] = null;
+    }
     room.players.forEach((p, idx) => {
       if (p && idx !== playerIndex) {
         send(p, { type: 'opponent_left', playerIndex });
       }
     });
-    rooms.delete(currentRoom);
+    // Keep room alive for 5 minutes if everyone disconnects so players can rejoin with the same code
+    if (room.players.every((p) => p === null)) {
+      const codeToDelete = currentRoom;
+      room.cleanupTimer = setTimeout(() => {
+        const latest = rooms.get(codeToDelete);
+        if (latest && latest.players.every((p) => p === null)) {
+          rooms.delete(codeToDelete);
+        }
+      }, 5 * 60 * 1000);
+    }
   });
 });
 

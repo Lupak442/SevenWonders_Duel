@@ -189,7 +189,7 @@ export function App() {
         });
       } else if (msg.type === 'room_joined') {
         setRoomCode(msg.code);
-        setMyOnlineIdx(1);
+        setMyOnlineIdx(msg.playerIndex === 0 ? 0 : 1);
         setOpponentJoined(true);
         setState(msg.state);
         setOnlineStatus(null);
