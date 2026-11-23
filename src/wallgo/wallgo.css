@@ -251,10 +251,22 @@
   height: clamp(8px, 2vw, 12px);
 }
 
-.wg-vwall.is-walled,
-.wg-hwall.is-walled {
-  background: linear-gradient(135deg, #f59e0b, #fde047);
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.55);
+.wg-vwall.is-walled.wall-p0,
+.wg-hwall.is-walled.wall-p0 {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.65);
+}
+
+.wg-vwall.is-walled.wall-p1,
+.wg-hwall.is-walled.wall-p1 {
+  background: linear-gradient(135deg, #e11d48, #fb7185);
+  box-shadow: 0 0 8px rgba(251, 113, 133, 0.65);
+}
+
+.wg-vwall.is-walled.wall-p2,
+.wg-hwall.is-walled.wall-p2 {
+  background: linear-gradient(135deg, #d97706, #fde047);
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.65);
 }
 
 .wg-vwall.valid-wall,

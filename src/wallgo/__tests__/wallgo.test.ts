@@ -61,7 +61,7 @@ describe('Wall Go 2 Engine', () => {
     s = movePiece(s, p0Sq.id, 0, 0);
     expect(s.phase).toBe('wall');
     s = placeWall(s, { type: 'h', r: 0, c: 0 });
-    expect(s.hWalls[0][0]).toBe(true);
+    expect(s.hWalls[0][0]).toBe(0);
     expect(s.currentPlayer).toBe(1);
 
     const terr = computeTerritories(s);

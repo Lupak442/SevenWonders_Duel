@@ -75,8 +75,8 @@ export function createInitialWallGoState(options: {
     setupOrder,
     setupStep: 0,
     pieces: initialPieces,
-    hWalls: createEmptyGrid(GRID_SIZE - 1, GRID_SIZE, false),
-    vWalls: createEmptyGrid(GRID_SIZE, GRID_SIZE - 1, false),
+    hWalls: createEmptyGrid<number | null>(GRID_SIZE - 1, GRID_SIZE, null),
+    vWalls: createEmptyGrid<number | null>(GRID_SIZE, GRID_SIZE - 1, null),
     selectedPieceId: null,
     movedPieceId: null,
     useWallBreak: false,
@@ -159,8 +159,8 @@ export function placeInitialPiece(
 }
 
 export function hasWallBetween(
-  hWalls: boolean[][],
-  vWalls: boolean[][],
+  hWalls: (number | null)[][],
+  vWalls: (number | null)[][],
   r1: number,
   c1: number,
   r2: number,
@@ -168,11 +168,11 @@ export function hasWallBetween(
 ): WallEdge | null {
   if (r1 === r2 && Math.abs(c1 - c2) === 1) {
     const minC = Math.min(c1, c2);
-    return vWalls[r1][minC] ? { type: 'v', r: r1, c: minC } : null;
+    return vWalls[r1][minC] !== null ? { type: 'v', r: r1, c: minC } : null;
   }
   if (c1 === c2 && Math.abs(r1 - r2) === 1) {
     const minR = Math.min(r1, r2);
-    return hWalls[minR][c1] ? { type: 'h', r: minR, c: c1 } : null;
+    return hWalls[minR][c1] !== null ? { type: 'h', r: minR, c: c1 } : null;
   }
   return null;
 }
@@ -293,9 +293,9 @@ export function movePiece(
 
   if (target.brokenWall) {
     if (target.brokenWall.type === 'h') {
-      hWalls[target.brokenWall.r][target.brokenWall.c] = false;
+      hWalls[target.brokenWall.r][target.brokenWall.c] = null;
     } else {
-      vWalls[target.brokenWall.r][target.brokenWall.c] = false;
+      vWalls[target.brokenWall.r][target.brokenWall.c] = null;
     }
     players[state.currentPlayer].wallBreakLeft -= 1;
     logText += ' [벽 부수기 사용!]';
@@ -338,8 +338,8 @@ export function movePiece(
 
 export function getValidWallEdgesForPiece(
   pieces: WallGoPiece[],
-  hWalls: boolean[][],
-  vWalls: boolean[][],
+  hWalls: (number | null)[][],
+  vWalls: (number | null)[][],
   pieceId: string
 ): WallEdge[] {
   const piece = pieces.find((p) => p.id === pieceId);
@@ -347,22 +347,22 @@ export function getValidWallEdgesForPiece(
 
   const edges: WallEdge[] = [];
   const { row, col } = piece;
-  if (row > 0 && !hWalls[row - 1][col]) edges.push({ type: 'h', r: row - 1, c: col });
-  if (row < GRID_SIZE - 1 && !hWalls[row][col]) edges.push({ type: 'h', r: row, c: col });
-  if (col > 0 && !vWalls[row][col - 1]) edges.push({ type: 'v', r: row, c: col - 1 });
-  if (col < GRID_SIZE - 1 && !vWalls[row][col]) edges.push({ type: 'v', r: row, c: col });
+  if (row > 0 && hWalls[row - 1][col] === null) edges.push({ type: 'h', r: row - 1, c: col });
+  if (row < GRID_SIZE - 1 && hWalls[row][col] === null) edges.push({ type: 'h', r: row, c: col });
+  if (col > 0 && vWalls[row][col - 1] === null) edges.push({ type: 'v', r: row, c: col - 1 });
+  if (col < GRID_SIZE - 1 && vWalls[row][col] === null) edges.push({ type: 'v', r: row, c: col });
 
   if (edges.length > 0) return edges;
 
   // Fallback if all 4 edges around piece are already walled
   for (let r = 0; r < GRID_SIZE - 1; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
-      if (!hWalls[r][c]) edges.push({ type: 'h', r, c });
+      if (hWalls[r][c] === null) edges.push({ type: 'h', r, c });
     }
   }
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE - 1; c++) {
-      if (!vWalls[r][c]) edges.push({ type: 'v', r, c });
+      if (vWalls[r][c] === null) edges.push({ type: 'v', r, c });
     }
   }
   return edges;
@@ -383,8 +383,8 @@ export function placeWall(state: WallGoState, edge: WallEdge): WallGoState {
 
   const hWalls = state.hWalls.map((row) => [...row]);
   const vWalls = state.vWalls.map((row) => [...row]);
-  if (edge.type === 'h') hWalls[edge.r][edge.c] = true;
-  else vWalls[edge.r][edge.c] = true;
+  if (edge.type === 'h') hWalls[edge.r][edge.c] = state.currentPlayer;
+  else vWalls[edge.r][edge.c] = state.currentPlayer;
 
   const logs = addLog(
     state,

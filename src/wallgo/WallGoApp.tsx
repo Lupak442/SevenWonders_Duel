@@ -652,7 +652,9 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
                           type="button"
                           aria-label={`세로 벽 ${r}-${c}`}
                           className={`wg-vwall ${
-                            state.vWalls[r][c] ? 'is-walled' : ''
+                            state.vWalls[r][c] !== null
+                              ? `is-walled wall-p${state.vWalls[r][c]}`
+                              : ''
                           } ${isWallValid('v', r, c) ? 'valid-wall' : ''}`}
                           onClick={() => handleWallClick({ type: 'v', r, c })}
                         />
@@ -671,7 +673,9 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
                         type="button"
                         aria-label={`가로 벽 ${r}-${c}`}
                         className={`wg-hwall ${
-                          state.hWalls[r][c] ? 'is-walled' : ''
+                          state.hWalls[r][c] !== null
+                            ? `is-walled wall-p${state.hWalls[r][c]}`
+                            : ''
                         } ${isWallValid('h', r, c) ? 'valid-wall' : ''}`}
                         onClick={() => handleWallClick({ type: 'h', r, c })}
                       />

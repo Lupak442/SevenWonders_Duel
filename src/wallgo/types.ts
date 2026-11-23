@@ -47,8 +47,8 @@ export interface WallGoState {
   setupOrder: number[];
   setupStep: number;
   pieces: WallGoPiece[];
-  hWalls: boolean[][]; // 6 x 7: between (r, c) and (r+1, c)
-  vWalls: boolean[][]; // 7 x 6: between (r, c) and (r, c+1)
+  hWalls: (number | null)[][]; // 6 x 7: owner index (0|1|2) or null
+  vWalls: (number | null)[][]; // 7 x 6: owner index (0|1|2) or null
   selectedPieceId: string | null;
   movedPieceId: string | null;
   useWallBreak: boolean;
