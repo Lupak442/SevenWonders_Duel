@@ -735,9 +735,9 @@ export const OnlineWaitingModal: React.FC<{
 };
 
 export const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [tab, setTab] = useState<'basics' | 'cards' | 'chains' | 'tokens' | 'wonders' | 'tips'>(
-    'basics'
-  );
+  const [tab, setTab] = useState<
+    'basics' | 'cards' | 'yellowPurple' | 'chains' | 'tokens' | 'wonders' | 'tips'
+  >('basics');
 
   // Group chain symbols -> { fromCards, toCards }
   const chainEntries = Object.entries(CHAIN_LABELS).map(([sym, labelKo]) => {
@@ -745,6 +745,64 @@ export const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const toCards = Object.values(CARDS).filter((c) => c.chainFrom === sym);
     return { sym, labelKo, fromCards, toCards };
   });
+
+  const yellowCards = Object.values(CARDS).filter((c) => c.color === 'yellow');
+  const purpleCards = Object.values(CARDS).filter((c) => c.color === 'purple');
+
+  const colorKo = (c: string) =>
+    c === 'yellow'
+      ? '노란색'
+      : c === 'blue'
+        ? '파란색'
+        : c === 'green'
+          ? '초록색'
+          : c === 'red'
+            ? '빨간색'
+            : c === 'brown'
+              ? '갈색'
+              : '회색';
+
+  const resKo = (r: string) =>
+    r === 'wood'
+      ? '목재'
+      : r === 'clay'
+        ? '진흙'
+        : r === 'stone'
+          ? '석재'
+          : r === 'glass'
+            ? '유리'
+            : '파피루스';
+
+  const describeYellowCard = (c: (typeof yellowCards)[number]) => {
+    const parts: string[] = [];
+    if (c.coins) parts.push(`즉시 +${c.coins}코인 획득`);
+    if (c.tradingDiscount) {
+      parts.push(`[${c.tradingDiscount.map(resKo).join('/')}] 무역 비용 1코인 고정 할인`);
+    }
+    if (c.flexibleProduces) {
+      parts.push(`매 턴 [${c.flexibleProduces.map(resKo).join('/')}] 중 1개 자유 생산`);
+    }
+    if (c.coinsPerCard) {
+      const target = c.coinsPerCard.includeWonders
+        ? '완공된 내 불가사의'
+        : `내 [${c.coinsPerCard.colors.map(colorKo).join('+')}] 카드`;
+      parts.push(`${target} 1개당 즉시 +${c.coinsPerCard.amount}코인`);
+    }
+    if (c.vp) parts.push(`종료 시 승점 +${c.vp}점`);
+    return parts.join(' · ');
+  };
+
+  const describePurpleCard = (c: (typeof purpleCards)[number]) => {
+    if (!c.guildVp) return '';
+    if (c.guildVp.type === 'mostWonders') {
+      return `나와 상대 중 완공된 불가사의가 더 많은 쪽 개수 × ${c.guildVp.vpPer}점 (즉시 코인 없음)`;
+    }
+    if (c.guildVp.type === 'coins') {
+      return `나와 상대 중 보유 코인이 더 많은 쪽 기준 3코인당 +${c.guildVp.vpPer}점 (코인을 내는 것 아님!)`;
+    }
+    const cols = (c.guildVp.colors ?? []).map(colorKo).join(' + ');
+    return `나와 상대 중 [${cols}] 카드가 더 많은 쪽 장수만큼 즉시 +1코인 & 종료 시 +${c.guildVp.vpPer}점`;
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -778,6 +836,13 @@ export const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             onClick={() => setTab('cards')}
           >
             카드 색상별 역할
+          </button>
+          <button
+            type="button"
+            className={`rtab ${tab === 'yellowPurple' ? 'active' : ''}`}
+            onClick={() => setTab('yellowPurple')}
+          >
+            금색·보라 도감
           </button>
           <button
             type="button"
@@ -948,6 +1013,60 @@ export const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </div>
               </div>
             </div>
+          )}
+
+          {tab === 'yellowPurple' && (
+            <>
+              <div className="rule-section-card">
+                <h4>🔎 금색 · 보라 카드 문양(아이콘) 읽는 법</h4>
+                <ul>
+                  <li>
+                    <strong><code>1🪙: 자원</code></strong> — 해당 자원이 부족할 때 상대 생산량과 상관없이 <strong>무조건 1코인</strong>으로 무역!
+                  </li>
+                  <li>
+                    <strong><code>자원 / 자원</code></strong> — 매 턴 표시된 자원 중 원하는 1개를 무료로 생산!
+                  </li>
+                  <li>
+                    <strong><code>+N🪙/장</code></strong> — 건설 시 내 특정 색 카드(또는 불가사의) 개수만큼 <strong>즉시 코인 획득</strong>!
+                  </li>
+                  <li>
+                    <strong><code>[컬러 미니 카드] +1🪙 +1★</code></strong> — 나와 상대 중 해당 색을 <strong>더 많이 가진 쪽 장수</strong>만큼 즉시 코인 & 종료 시 승점!
+                  </li>
+                  <li>
+                    <strong><code>[🏛️] +2★</code></strong> — 나와 상대 중 완공된 불가사의 최다 개수 × 2점!
+                  </li>
+                  <li>
+                    <strong><code>[보유3🪙] +1★</code></strong> — 코인을 내는 것이 아니라, 종료 시 보유 코인이 더 많은 쪽의 <strong>3코인마다 +1점</strong>!
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rule-section-card">
+                <h4>🟡 금색 (노란색 상업) 카드 전체 ({yellowCards.length}종)</h4>
+                <div className="guide-item-grid">
+                  {yellowCards.map((c) => (
+                    <div key={c.id} className="guide-item-card">
+                      <div className="gi-title">
+                        [{c.age}시대] {c.nameKo}
+                      </div>
+                      <div className="gi-desc">{describeYellowCard(c)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rule-section-card">
+                <h4>🟣 보라색 (길드 — 3시대) 카드 전체 ({purpleCards.length}종)</h4>
+                <div className="guide-item-grid">
+                  {purpleCards.map((c) => (
+                    <div key={c.id} className="guide-item-card">
+                      <div className="gi-title">{c.nameKo}</div>
+                      <div className="gi-desc">{describePurpleCard(c)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
           {tab === 'chains' && (
