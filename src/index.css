@@ -1147,7 +1147,29 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  min-width: 0;
+  flex: 1;
 }
+
+.card-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.card-header-peek {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.hdr-vp { color: #dbeafe; }
+.hdr-sh { color: #fecaca; }
+.hdr-sci { font-size: 10px; line-height: 1; }
+.hdr-coin { color: #fde047; }
 
 .card-cost-pill {
   font-size: 9px;
@@ -1359,6 +1381,12 @@ button {
   border-radius: 10px;
   margin-bottom: 12px;
   text-align: center;
+}
+
+.action-effect-desc.desc-yellow {
+  background: rgba(202, 138, 4, 0.16);
+  border-color: rgba(250, 204, 21, 0.45);
+  color: #fef9c3;
 }
 
 .flex-prod,

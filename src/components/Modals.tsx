@@ -68,6 +68,66 @@ export const CardActionModal: React.FC<CardActionModalProps> = ({
           <CardView card={card} costInfo={cardCost} playable />
         </div>
 
+        {/* Detailed live effect box for Yellow (Gold) commercial cards */}
+        {!card.guildVp &&
+          (card.coinsPerCard || card.tradingDiscount || card.flexibleProduces) &&
+          (() => {
+            const colorKo = (c: string) =>
+              c === 'yellow'
+                ? '노란색'
+                : c === 'blue'
+                  ? '파란색'
+                  : c === 'green'
+                    ? '초록색'
+                    : c === 'red'
+                      ? '빨간색'
+                      : c === 'brown'
+                        ? '갈색'
+                        : '회색';
+
+            if (card.coinsPerCard) {
+              const { colors, amount, includeWonders } = card.coinsPerCard;
+              const matchCount = includeWonders
+                ? player.wonders.filter((w) => w.built).length
+                : player.cards.filter((id) => colors.includes(CARDS[id]?.color)).length;
+              const totalGain = matchCount * amount;
+              const targetLabel = includeWonders
+                ? '완공된 내 불가사의'
+                : `내 [${colors.map(colorKo).join(' + ')}] 카드`;
+              return (
+                <div className="action-effect-desc desc-yellow">
+                  <div>
+                    <strong>금색 상업 효과:</strong> 코인을 내는 것이 아니라, 건설 시{' '}
+                    <strong>{targetLabel}</strong> 1개당 <strong>+{amount}코인</strong>을 즉시 획득
+                    {card.vp ? ` + 종료 시 승점 ${card.vp}점!` : '!'}
+                  </div>
+                  <div className="aed-live">
+                    현재 {targetLabel} {matchCount}개 → 지금 지으면 즉시 +{totalGain}코인
+                    {card.vp ? ` · 승점 +${card.vp}점` : ''}
+                  </div>
+                </div>
+              );
+            }
+
+            if (card.tradingDiscount) {
+              return (
+                <div className="action-effect-desc desc-yellow">
+                  <strong>무역 할인 효과:</strong> 이후 해당 자원이 부족할 때 상대 생산량과 상관없이{' '}
+                  <strong>무조건 1코인</strong>으로 사옵니다!
+                </div>
+              );
+            }
+
+            if (card.flexibleProduces) {
+              return (
+                <div className="action-effect-desc desc-yellow">
+                  <strong>자유 자원 생산:</strong> 매 턴 표시된 자원 중 원하는 1개를 무료로 생산합니다!
+                </div>
+              );
+            }
+            return null;
+          })()}
+
         {card.guildVp && (() => {
           let desc = '';
           let preview = '';

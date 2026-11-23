@@ -47,28 +47,50 @@ export const CardView: React.FC<CardViewProps> = ({
         blocked ? 'is-blocked' : ''
       } ${compact ? 'is-compact' : ''}`}
     >
-      {/* Top Color Header */}
+      {/* Top Color Header — always visible even when covered by lower-row cards! */}
       <div className="card-header">
         <span className="card-title" title={card.nameKo}>
           {card.nameKo}
         </span>
-        {costInfo && playable && (
-          <span
-            className={`card-cost-pill ${
-              costInfo.freeByChain
-                ? 'pill-free'
-                : costInfo.canAfford
-                  ? 'pill-ok'
-                  : 'pill-no'
-            }`}
-          >
-            {costInfo.freeByChain
-              ? '연쇄'
-              : costInfo.totalCoins === 0
-                ? '무료'
-                : costInfo.totalCoins}
+        <span className="card-header-right">
+          {/* Compact top-right reward peek so blocked upper-row cards are readable */}
+          <span className="card-header-peek">
+            {prodEntries.map(([r, cnt]) => (
+              <ResourceBadge key={r} type={r} count={cnt} size="sm" />
+            ))}
+            {card.vp !== undefined && !card.science && (
+              <span className="hdr-vp">★{card.vp}</span>
+            )}
+            {card.shields !== undefined && (
+              <span className="hdr-sh">🛡️{card.shields}</span>
+            )}
+            {card.science && (
+              <span className="hdr-sci" title={SCIENCE_META[card.science].labelKo}>
+                {SCIENCE_META[card.science].emoji}
+              </span>
+            )}
+            {card.coins !== undefined && (
+              <span className="hdr-coin">+{card.coins}G</span>
+            )}
           </span>
-        )}
+          {costInfo && playable && (
+            <span
+              className={`card-cost-pill ${
+                costInfo.freeByChain
+                  ? 'pill-free'
+                  : costInfo.canAfford
+                    ? 'pill-ok'
+                    : 'pill-no'
+              }`}
+            >
+              {costInfo.freeByChain
+                ? '연쇄'
+                : costInfo.totalCoins === 0
+                  ? '무료'
+                  : costInfo.totalCoins}
+            </span>
+          )}
+        </span>
       </div>
 
       {/* Illustrated Artwork Window */}
