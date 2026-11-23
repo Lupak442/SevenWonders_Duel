@@ -43,8 +43,9 @@ describe('Wall Go 2 Engine', () => {
 
     const p0Cir = s.pieces.find((p) => p.owner === 0 && p.shape === 'circle')!;
     const cirMoves = getValidMoves(s, p0Cir.id, false);
-    // Circle at (3,4) can bend to (2,5)
+    // Circle at (3,4) can move diagonally 1 step to (2,5), but NOT 2 steps to (3,6)
     expect(cirMoves.some((m) => m.row === 2 && m.col === 5)).toBe(true);
+    expect(cirMoves.some((m) => m.row === 3 && m.col === 6)).toBe(false);
   });
 
   it('supports Wall Break in 3-player mode and separates territories cleanly', () => {

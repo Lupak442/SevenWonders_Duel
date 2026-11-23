@@ -598,7 +598,7 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
           {state.phase === 'move' &&
             (state.selectedPieceId
               ? '초록색 칸으로 이동하거나, 제자리를 다시 클릭하세요.'
-              : '이동할 내 말(■ 직선 / ● 꺾기)을 클릭하세요.')}
+              : '이동할 내 말(■ +자 2칸 / ● 8방향 1칸)을 클릭하세요.')}
           {state.phase === 'wall' && '반짝이는 경계선을 클릭해 벽 1개를 설치하세요.'}
         </div>
       </div>
@@ -870,10 +870,10 @@ const WallGoRulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
         </p>
         <ul>
           <li>
-            <strong>■ 사각 말:</strong> 상·하·좌·우 <strong>직선</strong>으로만 0~2칸 이동 가능 (꺾기 불가)
+            <strong>■ 사각 말:</strong> 상·하·좌·우(+자) 직선으로 최대 <strong>2칸</strong> 이동 가능
           </li>
           <li>
-            <strong>● 원형 말:</strong> 0~2칸 이동하며 2칸째에 <strong>90도 꺾기 가능</strong>
+            <strong>● 원형 말:</strong> 대각선 포함 <strong>8방향(모든 방향)</strong>으로 최대 <strong>1칸</strong> 이동 가능
           </li>
         </ul>
         <p>
