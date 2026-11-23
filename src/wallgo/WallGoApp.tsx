@@ -229,11 +229,18 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
         </button>
 
         <div className="lobby-card wg-lobby-card">
-          <div className="lobby-badge-row">
-            <span className="lobby-season-pill">
-              <Sparkles size={12} />
-              DEVIL&apos;S PLAN EDITION
-            </span>
+          <div className="wg-hero-banner">
+            <img
+              src="/assets/wallgo/wg-lobby-hero.jpg"
+              alt="Wall Go 2"
+              className="wg-hero-img"
+            />
+            <div className="wg-hero-overlay">
+              <span className="lobby-season-pill">
+                <Sparkles size={12} />
+                DEVIL&apos;S PLAN EDITION
+              </span>
+            </div>
           </div>
 
           <h1 className="lobby-title">WALL GO 2</h1>
@@ -489,7 +496,8 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
       : '';
 
   return (
-    <div className="app-shell wg-shell">
+    <div className="wg-game-bg">
+      <div className="app-shell wg-shell">
       {/* Top Bar */}
       <header className="top-bar">
         <div className="tb-left">
@@ -844,6 +852,7 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
       )}
 
       {showRules && <WallGoRulesModal onClose={() => setShowRules(false)} />}
+      </div>
     </div>
   );
 };
