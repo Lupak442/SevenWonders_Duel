@@ -90,9 +90,10 @@ export function performWallGoAITurn(state: WallGoState): WallGoState {
     return placeWall(state, bestEdge);
   }
 
-  // 3. 'move' phase -> evaluate (piece, target, wallEdge)
+  // 3. 'move' phase -> evaluate (piece, target, wallEdge), then perform ONLY the move first
+  // so the user clearly sees which piece moved before the wall is placed next to it!
   const myPieces = state.pieces.filter((p) => p.owner === aiIdx);
-  const scoredMoves: { next: WallGoState; score: number }[] = [];
+  const scoredMoves: { afterMove: WallGoState; score: number }[] = [];
 
   for (const piece of myPieces) {
     const allowBreak =
@@ -107,7 +108,7 @@ export function performWallGoAITurn(state: WallGoState): WallGoState {
 
       if (afterMove.phase !== 'wall' || !afterMove.movedPieceId) {
         scoredMoves.push({
-          next: afterMove,
+          afterMove,
           score: evaluateWallGo(afterMove, aiIdx),
         });
         continue;
@@ -119,13 +120,15 @@ export function performWallGoAITurn(state: WallGoState): WallGoState {
         afterMove.vWalls,
         afterMove.movedPieceId
       );
+      let bestForThisMove = -Infinity;
       for (const e of edges) {
         const afterWall = placeWall(afterMove, e);
         let val = evaluateWallGo(afterWall, aiIdx);
-        // Prefer actually moving over staying in place unless staying secures territory
-        if (t.row === piece.row && t.col === piece.col) val -= 0.4;
-        if (t.brokenWall) val -= 3.5; // Save wall break unless it yields a big gain
-        scoredMoves.push({ next: afterWall, score: val });
+        if (t.brokenWall) val -= 3.5;
+        if (val > bestForThisMove) bestForThisMove = val;
+      }
+      if (bestForThisMove > -Infinity) {
+        scoredMoves.push({ afterMove, score: bestForThisMove });
       }
     }
   }
@@ -135,11 +138,11 @@ export function performWallGoAITurn(state: WallGoState): WallGoState {
 
   if (state.difficulty === 'easy' && scoredMoves.length > 4) {
     const idx = Math.floor(Math.random() * Math.min(5, scoredMoves.length));
-    return scoredMoves[idx].next;
+    return scoredMoves[idx].afterMove;
   }
   if (state.difficulty === 'normal' && scoredMoves.length > 2 && Math.random() < 0.2) {
-    return scoredMoves[1].next;
+    return scoredMoves[1].afterMove;
   }
 
-  return scoredMoves[0].next;
+  return scoredMoves[0].afterMove;
 }

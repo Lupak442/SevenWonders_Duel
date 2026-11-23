@@ -205,11 +205,8 @@ export function getValidMoves(
   const piece = state.pieces.find((p) => p.id === pieceId);
   if (!piece) return [];
 
-  const results: MoveTarget[] = [
-    { row: piece.row, col: piece.col, brokenWall: null }, // 0-step stay
-  ];
+  const results: MoveTarget[] = [];
   const seen = new Map<string, WallEdge | null>();
-  seen.set(`${piece.row},${piece.col}`, null);
 
   const tryAdd = (r: number, c: number, broken: WallEdge | null) => {
     const key = `${r},${c}`;
@@ -440,9 +437,29 @@ export function placeWall(state: WallGoState, edge: WallEdge): WallGoState {
   });
 }
 
+export function canPlayerMoveAnyPiece(state: WallGoState, playerId: number): boolean {
+  const player = state.players[playerId];
+  if (!player) return false;
+  const allowBreak = player.wallBreakLeft > 0;
+  return state.pieces
+    .filter((p) => p.owner === playerId)
+    .some((p) => getValidMoves(state, p.id, allowBreak).length > 0);
+}
+
 function advanceTurnAfterWall(state: WallGoState): WallGoState {
   const terr = computeTerritories(state);
-  if (terr.allSeparated) {
+
+  // Find next player who can actually move at least 1 piece
+  let nextPlayer: number | null = null;
+  for (let step = 1; step <= state.playerCount; step++) {
+    const candidate = (state.currentPlayer + step) % state.playerCount;
+    if (canPlayerMoveAnyPiece(state, candidate)) {
+      nextPlayer = candidate;
+      break;
+    }
+  }
+
+  if (terr.allSeparated || nextPlayer === null) {
     // Determine winner: max total area, tiebreak maxSingle
     let bestPlayer = 0;
     let tied = false;
@@ -476,7 +493,6 @@ function advanceTurnAfterWall(state: WallGoState): WallGoState {
     };
   }
 
-  const nextPlayer = (state.currentPlayer + 1) % state.playerCount;
   return {
     ...state,
     phase: 'move',

@@ -57,12 +57,12 @@ describe('Wall Go 2 Engine', () => {
     s = placeInitialPiece(s, 5, 6);
     s = placeInitialPiece(s, 1, 0);
 
-    // Move P0 square at (0,0) stay in place, place wall (h, 0, 0)
+    // Move P0 square at (0,0) -> (0,1), then place wall (h, 0, 1)
     const p0Sq = s.pieces.find((p) => p.owner === 0 && p.shape === 'square')!;
-    s = movePiece(s, p0Sq.id, 0, 0);
+    s = movePiece(s, p0Sq.id, 0, 1);
     expect(s.phase).toBe('wall');
-    s = placeWall(s, { type: 'h', r: 0, c: 0 });
-    expect(s.hWalls[0][0]).toBe(0);
+    s = placeWall(s, { type: 'h', r: 0, c: 1 });
+    expect(s.hWalls[0][1]).toBe(0);
     expect(s.currentPlayer).toBe(1);
 
     const terr = computeTerritories(s);

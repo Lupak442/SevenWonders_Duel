@@ -471,6 +471,9 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
         }
       }
       if (clickedOwn) {
+        const allowBreak = state.useWallBreak && currentP.wallBreakLeft > 0;
+        const canMoveThis = getValidMoves(state, clickedOwn.id, allowBreak).length > 0;
+        if (!canMoveThis) return;
         setState((prev) =>
           prev
             ? {
@@ -605,7 +608,7 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
           {state.phase === 'setup' && '빈 칸을 클릭해 말을 배치하세요.'}
           {state.phase === 'move' &&
             (state.selectedPieceId
-              ? '초록색 칸으로 이동하거나, 제자리를 다시 클릭하세요.'
+              ? '초록색 칸으로 이동하세요. (제자리 불가)'
               : '이동할 내 말(■ +자 2칸 / ● 8방향 1칸)을 클릭하세요.')}
           {state.phase === 'wall' && '반짝이는 경계선을 클릭해 벽 1개를 설치하세요.'}
         </div>
