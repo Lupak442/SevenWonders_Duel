@@ -3,7 +3,7 @@
   position: relative;
   min-height: 100vh;
   background-image:
-    linear-gradient(180deg, rgba(6, 10, 18, 0.52) 0%, rgba(6, 10, 18, 0.8) 100%),
+    linear-gradient(180deg, rgba(6, 10, 18, 0.14) 0%, rgba(6, 10, 18, 0.34) 100%),
     url('/assets/wallgo/wg-arena-bg.jpg');
   background-size: cover;
   background-position: center;
@@ -193,7 +193,8 @@
 }
 
 .wg-board {
-  background: linear-gradient(160deg, #17233b 0%, #0b111e 100%);
+  background: linear-gradient(160deg, rgba(23, 35, 59, 0.78) 0%, rgba(11, 17, 30, 0.84) 100%);
+  backdrop-filter: blur(8px);
   border: 2px solid var(--border-gold);
   border-radius: 18px;
   padding: 12px;
