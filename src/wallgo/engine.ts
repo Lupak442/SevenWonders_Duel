@@ -290,7 +290,31 @@ export function getValidMoves(
     }
   }
 
-  return results;
+  // Filter out destinations where no adjacent wall can be placed (must place 1 wall adjacent to moved piece)
+  return results.filter((t) => {
+    const hasEmptyAdj =
+      (t.row > 0 &&
+        (state.hWalls[t.row - 1][t.col] === null ||
+          (t.brokenWall?.type === 'h' &&
+            t.brokenWall.r === t.row - 1 &&
+            t.brokenWall.c === t.col))) ||
+      (t.row < GRID_SIZE - 1 &&
+        (state.hWalls[t.row][t.col] === null ||
+          (t.brokenWall?.type === 'h' &&
+            t.brokenWall.r === t.row &&
+            t.brokenWall.c === t.col))) ||
+      (t.col > 0 &&
+        (state.vWalls[t.row][t.col - 1] === null ||
+          (t.brokenWall?.type === 'v' &&
+            t.brokenWall.r === t.row &&
+            t.brokenWall.c === t.col - 1))) ||
+      (t.col < GRID_SIZE - 1 &&
+        (state.vWalls[t.row][t.col] === null ||
+          (t.brokenWall?.type === 'v' &&
+            t.brokenWall.r === t.row &&
+            t.brokenWall.c === t.col)));
+    return hasEmptyAdj;
+  });
 }
 
 export function movePiece(
@@ -379,19 +403,6 @@ export function getValidWallEdgesForPiece(
   if (col > 0 && vWalls[row][col - 1] === null) edges.push({ type: 'v', r: row, c: col - 1 });
   if (col < GRID_SIZE - 1 && vWalls[row][col] === null) edges.push({ type: 'v', r: row, c: col });
 
-  if (edges.length > 0) return edges;
-
-  // Fallback if all 4 edges around piece are already walled
-  for (let r = 0; r < GRID_SIZE - 1; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      if (hWalls[r][c] === null) edges.push({ type: 'h', r, c });
-    }
-  }
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE - 1; c++) {
-      if (vWalls[r][c] === null) edges.push({ type: 'v', r, c });
-    }
-  }
   return edges;
 }
 

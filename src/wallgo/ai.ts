@@ -122,6 +122,8 @@ export function performWallGoAITurn(state: WallGoState): WallGoState {
       for (const e of edges) {
         const afterWall = placeWall(afterMove, e);
         let val = evaluateWallGo(afterWall, aiIdx);
+        // Prefer actually moving over staying in place unless staying secures territory
+        if (t.row === piece.row && t.col === piece.col) val -= 0.4;
         if (t.brokenWall) val -= 3.5; // Save wall break unless it yields a big gain
         scoredMoves.push({ next: afterWall, score: val });
       }
