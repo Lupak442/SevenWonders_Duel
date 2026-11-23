@@ -422,11 +422,80 @@ export function placeWall(state: WallGoState, edge: WallEdge): WallGoState {
 
 export function canPlayerMoveAnyPiece(state: WallGoState, playerId: number): boolean {
   const player = state.players[playerId];
-  if (!player) return false;
+  if (!player || player.disqualified) return false;
   const allowBreak = player.wallBreakLeft > 0;
   return state.pieces
     .filter((p) => p.owner === playerId)
     .some((p) => getValidMoves(state, p.id, allowBreak).length > 0);
+}
+
+export function handleMoveTimeout(state: WallGoState): WallGoState {
+  if (state.phase === 'game_over') return state;
+  const pIdx = state.currentPlayer;
+  const players = state.players.map((p, i) =>
+    i === pIdx ? { ...p, disqualified: true } : p
+  );
+  const alive = players.filter((p) => !p.disqualified);
+  const logs = addLog(
+    state,
+    `⏰ 90초 초과! ${players[pIdx].name} 실격 처리되었습니다.`,
+    pIdx
+  );
+
+  if (alive.length <= 1) {
+    const winner = alive.length === 1 ? alive[0].id : null;
+    const winMsg =
+      winner !== null
+        ? `🏆 ${players[winner].name} 부전승 승리!`
+        : `🤝 전원 실격으로 무승부`;
+    return {
+      ...state,
+      phase: 'game_over',
+      players,
+      winner,
+      selectedPieceId: null,
+      movedPieceId: null,
+      logs: addLog({ ...state, logs }, winMsg, winner ?? undefined),
+    };
+  }
+
+  // 3P with 2 players remaining: advance to next active player
+  let nextPlayer = (pIdx + 1) % state.playerCount;
+  while (players[nextPlayer].disqualified) {
+    nextPlayer = (nextPlayer + 1) % state.playerCount;
+  }
+
+  return {
+    ...state,
+    phase: state.phase === 'setup' ? 'setup' : 'move',
+    players,
+    currentPlayer: nextPlayer,
+    selectedPieceId: null,
+    movedPieceId: null,
+    turnCount: state.turnCount + 1,
+    logs,
+  };
+}
+
+export function handleWallTimeout(state: WallGoState): WallGoState {
+  if (state.phase !== 'wall' || !state.movedPieceId) return state;
+  const edges = getValidWallEdgesForPiece(
+    state.pieces,
+    state.hWalls,
+    state.vWalls,
+    state.movedPieceId
+  );
+  if (edges.length === 0) return advanceTurnAfterWall(state);
+  const randomEdge = edges[Math.floor(Math.random() * edges.length)];
+  const next = placeWall(state, randomEdge);
+  return {
+    ...next,
+    logs: addLog(
+      next,
+      `⏰ 90초 초과! ${state.players[state.currentPlayer].name}의 벽이 임의의 면에 자동 설치되었습니다.`,
+      state.currentPlayer
+    ),
+  };
 }
 
 function advanceTurnAfterWall(state: WallGoState): WallGoState {
@@ -443,10 +512,15 @@ function advanceTurnAfterWall(state: WallGoState): WallGoState {
   }
 
   if (terr.allSeparated || nextPlayer === null) {
-    // Determine winner: max total area, tiebreak maxSingle
-    let bestPlayer = 0;
+    // Determine winner among non-disqualified players: max total area, tiebreak maxSingle
+    let bestPlayer: number | null = null;
     let tied = false;
-    for (let i = 1; i < state.playerCount; i++) {
+    for (let i = 0; i < state.playerCount; i++) {
+      if (state.players[i].disqualified) continue;
+      if (bestPlayer === null) {
+        bestPlayer = i;
+        continue;
+      }
       if (terr.areas[i] > terr.areas[bestPlayer]) {
         bestPlayer = i;
         tied = false;

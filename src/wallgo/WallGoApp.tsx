@@ -4,6 +4,7 @@ import {
   BookOpen,
   Bot,
   Check,
+  Clock,
   Copy,
   Globe,
   Hammer,
@@ -24,6 +25,8 @@ import {
   getValidMoves,
   getValidWallEdgesForPiece,
   GRID_SIZE,
+  handleMoveTimeout,
+  handleWallTimeout,
   isCellOccupied,
   movePiece,
   placeInitialPiece,
@@ -73,6 +76,7 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
   const [joinedCount, setJoinedCount] = useState(1);
   const [onlineStatus, setOnlineStatus] = useState<string | null>(null);
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+  const [turnSecondsLeft, setTurnSecondsLeft] = useState(90);
 
   const closeSocket = useCallback(() => {
     if (wsRef.current) {
@@ -105,6 +109,44 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
     }, 480);
     return () => window.clearTimeout(timer);
   }, [state]);
+
+  // Reset 90-second turn timer on each phase/turn/step change
+  const phaseKey = state
+    ? `${state.phase}-${state.currentPlayer}-${state.turnCount}-${state.setupStep}`
+    : 'none';
+  useEffect(() => {
+    setTurnSecondsLeft(90);
+  }, [phaseKey]);
+
+  // 90-second countdown for active human player
+  const isWaitingOnline =
+    Boolean(state && state.mode === 'online' && joinedCount < state.playerCount);
+  const isHumanTurnActive = Boolean(
+    state &&
+      !isWaitingOnline &&
+      state.phase !== 'game_over' &&
+      (state.mode === 'local'
+        ? true
+        : state.mode === 'ai'
+          ? !state.players[state.currentPlayer]?.isAI
+          : state.currentPlayer === myOnlineIdx)
+  );
+
+  useEffect(() => {
+    if (!isHumanTurnActive) return;
+    const id = window.setInterval(() => {
+      setTurnSecondsLeft((prev) => {
+        if (prev <= 1) {
+          applyAndSync((s) =>
+            s.phase === 'wall' ? handleWallTimeout(s) : handleMoveTimeout(s)
+          );
+          return 90;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [isHumanTurnActive, applyAndSync]);
 
   const startBotGame = () => {
     closeSocket();
@@ -523,9 +565,15 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
                       : '원형 ●'
                   })`
                 : state.phase === 'move'
-                  ? `${currentP.name}: 말 이동 (0~2칸)`
+                  ? `${currentP.name}: 말 이동`
                   : `${currentP.name}: 벽 1개 설치`}
           </span>
+          {state.phase !== 'game_over' && !isOnlineWaiting && (
+            <span className={`wg-timer-pill ${turnSecondsLeft <= 15 ? 'is-urgent' : ''}`}>
+              <Clock size={12} />
+              <span>{turnSecondsLeft}초</span>
+            </span>
+          )}
         </div>
 
         <div className="tb-right">

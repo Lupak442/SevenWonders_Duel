@@ -16,6 +16,7 @@ export interface WallGoPlayer {
   name: string;
   isAI: boolean;
   wallBreakLeft: number;
+  disqualified?: boolean;
 }
 
 export interface WallEdge {
