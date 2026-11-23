@@ -208,6 +208,7 @@ export function App() {
       mode: 'online',
       p0Name: playerName,
       p1Name: '상대 플레이어',
+      firstPlayer: 'random',
     });
     connectOnline(serverUrl, (ws) => {
       ws.send(JSON.stringify({ type: 'create_room', state: initial }));
@@ -502,6 +503,7 @@ export function App() {
                 aiDifficulty: s.aiDifficulty,
                 p0Name: s.players[0].name,
                 p1Name: s.players[1].name,
+                firstPlayer: s.winner === null ? 'random' : s.winner === 0 ? 1 : 0,
               })
             );
           }}

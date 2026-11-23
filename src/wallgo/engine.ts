@@ -26,14 +26,9 @@ function addLog(
   return [{ id: nextId, text, player }, ...state.logs].slice(0, 50);
 }
 
-function buildSnakeOrder(playerCount: 2 | 3): number[] {
-  if (playerCount === 2) {
-    // 2 Circle pieces per player are pre-placed at symmetric fixed positions;
-    // players place their remaining 2 Square pieces each in snake order: 0, 1, 1, 0
-    return [0, 1, 1, 0];
-  }
-  // 3P: 2 pieces each (6 total): 0,1,2,2,1,0
-  return [0, 1, 2, 2, 1, 0];
+function buildSnakeOrder(playerCount: 2 | 3, starter: number): number[] {
+  const base = playerCount === 2 ? [0, 1, 1, 0] : [0, 1, 2, 2, 1, 0];
+  return base.map((idx) => (idx + starter) % playerCount);
 }
 
 export function createInitialWallGoState(options: {
@@ -41,8 +36,19 @@ export function createInitialWallGoState(options: {
   playerCount: 2 | 3;
   difficulty?: WallGoDifficulty;
   playerNames?: string[];
+  firstPlayer?: number | 'random';
 }): WallGoState {
-  const { mode, playerCount, difficulty = 'normal', playerNames = [] } = options;
+  const {
+    mode,
+    playerCount,
+    difficulty = 'normal',
+    playerNames = [],
+    firstPlayer = 0,
+  } = options;
+  const starter =
+    firstPlayer === 'random'
+      ? Math.floor(Math.random() * playerCount)
+      : ((firstPlayer % playerCount) + playerCount) % playerCount;
   const players: WallGoPlayer[] = Array.from({ length: playerCount }, (_, idx) => ({
     id: idx,
     name:
@@ -52,7 +58,7 @@ export function createInitialWallGoState(options: {
     wallBreakLeft: playerCount === 3 ? 1 : 0,
   }));
 
-  const setupOrder = buildSnakeOrder(playerCount);
+  const setupOrder = buildSnakeOrder(playerCount, starter);
 
   // In 2-player mode, each player's 2 Circle pieces start at fixed symmetric positions
   const initialPieces: WallGoPiece[] =
@@ -135,16 +141,17 @@ export function placeInitialPiece(
   );
 
   if (nextStep >= state.setupOrder.length) {
+    const firstMover = state.setupOrder[0] ?? 0;
     logs = addLog(
       { ...state, logs },
-      `배치 완료! ${state.players[0].name} 차례부터 이동을 시작합니다.`
+      `배치 완료! ${state.players[firstMover].name} 차례부터 이동을 시작합니다.`
     );
     return {
       ...state,
       phase: 'move',
       pieces,
       setupStep: nextStep,
-      currentPlayer: 0,
+      currentPlayer: firstMover,
       logs,
     };
   }

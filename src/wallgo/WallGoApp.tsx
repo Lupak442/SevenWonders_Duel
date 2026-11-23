@@ -183,6 +183,7 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
       mode: 'online',
       playerCount,
       playerNames: [p1Name.trim() || '호스트', '대기 중 2', '대기 중 3'],
+      firstPlayer: 'random',
     });
     connectOnline((ws) => {
       ws.send(
@@ -795,14 +796,28 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
                 type="button"
                 className="action-btn btn-build"
                 onClick={() =>
-                  applyAndSync((s) =>
-                    createInitialWallGoState({
+                  applyAndSync((s) => {
+                    const t = computeTerritories(s);
+                    let loser: number | 'random' = 'random';
+                    if (s.winner !== null) {
+                      let minArea = Infinity;
+                      let minIdx = 0;
+                      for (let i = 0; i < s.playerCount; i++) {
+                        if (t.areas[i] < minArea) {
+                          minArea = t.areas[i];
+                          minIdx = i;
+                        }
+                      }
+                      loser = minIdx;
+                    }
+                    return createInitialWallGoState({
                       mode: s.mode,
                       playerCount: s.playerCount,
                       difficulty: s.difficulty,
                       playerNames: s.players.map((p) => p.name),
-                    })
-                  )
+                      firstPlayer: loser,
+                    });
+                  })
                 }
               >
                 <span className="ab-title-icon">
