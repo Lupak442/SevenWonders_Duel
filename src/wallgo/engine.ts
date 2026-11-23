@@ -244,8 +244,8 @@ export function getValidMoves(
       }
     }
   } else {
-    // Circle: 8 directions (orthogonal + diagonal), max 1 step
-    // 1) Orthogonal 4 directions (1 step)
+    // Circle: 1 step orthogonally (+), and from there optionally 1 step left/right (ㄴ/ㄱ bend).
+    // Cannot pass through occupied intermediate cells; cannot move 2 steps straight.
     for (const d1 of DIRS) {
       const r1 = piece.row + d1.dr;
       const c1 = piece.col + d1.dc;
@@ -254,35 +254,18 @@ export function getValidMoves(
       const w1 = hasWallBetween(state.hWalls, state.vWalls, piece.row, piece.col, r1, c1);
       if (w1 && !allowWallBreak) continue;
       tryAdd(r1, c1, w1);
-    }
 
-    // 2) Diagonal 4 directions (1 step)
-    const DIAGS = [
-      { dr: -1, dc: -1 },
-      { dr: -1, dc: 1 },
-      { dr: 1, dc: -1 },
-      { dr: 1, dc: 1 },
-    ];
-    for (const { dr, dc } of DIAGS) {
-      const nr = piece.row + dr;
-      const nc = piece.col + dc;
-      if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
-      if (isCellOccupied(state.pieces, nr, nc)) continue;
-
-      // Check the two L-paths: via (nr, piece.col) and via (piece.row, nc)
-      const wA1 = hasWallBetween(state.hWalls, state.vWalls, piece.row, piece.col, nr, piece.col);
-      const wA2 = hasWallBetween(state.hWalls, state.vWalls, nr, piece.col, nr, nc);
-      const wallsA = [wA1, wA2].filter(Boolean) as WallEdge[];
-
-      const wB1 = hasWallBetween(state.hWalls, state.vWalls, piece.row, piece.col, piece.row, nc);
-      const wB2 = hasWallBetween(state.hWalls, state.vWalls, piece.row, nc, nr, nc);
-      const wallsB = [wB1, wB2].filter(Boolean) as WallEdge[];
-
-      if (wallsA.length === 0 || wallsB.length === 0) {
-        tryAdd(nr, nc, null);
-      } else if (allowWallBreak) {
-        if (wallsA.length === 1) tryAdd(nr, nc, wallsA[0]);
-        else if (wallsB.length === 1) tryAdd(nr, nc, wallsB[0]);
+      // Step 2: turn 90 degrees left or right (perpendicular to d1)
+      for (const d2 of DIRS) {
+        if (d2.dr === d1.dr && d2.dc === d1.dc) continue; // no 2-step straight
+        if (d2.dr === -d1.dr && d2.dc === -d1.dc) continue; // no backtracking
+        const r2 = r1 + d2.dr;
+        const c2 = c1 + d2.dc;
+        if (r2 < 0 || r2 >= GRID_SIZE || c2 < 0 || c2 >= GRID_SIZE) continue;
+        if (isCellOccupied(state.pieces, r2, c2)) continue;
+        const w2 = hasWallBetween(state.hWalls, state.vWalls, r1, c1, r2, c2);
+        if (w2 && (w1 !== null || !allowWallBreak)) continue;
+        tryAdd(r2, c2, w1 ?? w2);
       }
     }
   }
