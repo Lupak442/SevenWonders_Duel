@@ -118,35 +118,40 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
     setTurnSecondsLeft(90);
   }, [phaseKey]);
 
-  // 90-second countdown for active human player
+  // 90-second countdown: ticks visibly for ALL players (including waiting opponents),
+  // while only the active player's client triggers timeout sync.
   const isWaitingOnline =
     Boolean(state && state.mode === 'online' && joinedCount < state.playerCount);
-  const isHumanTurnActive = Boolean(
+  const shouldTickTimer = Boolean(
     state &&
       !isWaitingOnline &&
       state.phase !== 'game_over' &&
-      (state.mode === 'local'
-        ? true
-        : state.mode === 'ai'
-          ? !state.players[state.currentPlayer]?.isAI
-          : state.currentPlayer === myOnlineIdx)
+      !state.players[state.currentPlayer]?.isAI
+  );
+  const isHumanTurnActive = Boolean(
+    shouldTickTimer &&
+      state &&
+      (state.mode !== 'online' || state.currentPlayer === myOnlineIdx)
   );
 
   useEffect(() => {
-    if (!isHumanTurnActive) return;
+    if (!shouldTickTimer) return;
     const id = window.setInterval(() => {
       setTurnSecondsLeft((prev) => {
         if (prev <= 1) {
-          applyAndSync((s) =>
-            s.phase === 'wall' ? handleWallTimeout(s) : handleMoveTimeout(s)
-          );
-          return 90;
+          if (isHumanTurnActive) {
+            applyAndSync((s) =>
+              s.phase === 'wall' ? handleWallTimeout(s) : handleMoveTimeout(s)
+            );
+            return 90;
+          }
+          return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [isHumanTurnActive, applyAndSync]);
+  }, [shouldTickTimer, isHumanTurnActive, applyAndSync]);
 
   const startBotGame = () => {
     closeSocket();
