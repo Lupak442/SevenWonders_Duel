@@ -642,15 +642,29 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
                 </div>
 
                 <div className="hs-p-meta">
-                  <span>라운드 베팅: {p.roundBet}칩</span>
+                  <span className="hs-total-bet-pill" title="기본 베팅 + 추가 베팅 합계">
+                    총 투입 <b>{(p.antePaid ?? 0) + p.roundBet}칩</b>
+                  </span>
                   {p.eliminated ? (
                     <span className="hs-status-tag tag-out">탈락</span>
                   ) : p.folded ? (
-                    <span className="hs-status-tag tag-fold">FOLD</span>
-                  ) : p.chips === 0 && p.roundBet > 0 ? (
-                    <span className="hs-status-tag tag-allin">🔥 ALL-IN</span>
-                  ) : p.stayed && state.phase === 'hit_stay' ? (
-                    <span className="hs-status-tag tag-stay">STAY</span>
+                    <span className="hs-status-tag tag-fold">✕ FOLD</span>
+                  ) : p.lastAction ? (
+                    <span className={`hs-status-tag act-${p.lastAction.type}`}>
+                      {p.lastAction.type === 'check'
+                        ? '✓ CHECK'
+                        : p.lastAction.type === 'call'
+                          ? `🪙 CALL +${p.lastAction.amount ?? 0}`
+                          : p.lastAction.type === 'raise'
+                            ? `⬆ RAISE +${p.lastAction.amount ?? 0}`
+                            : p.lastAction.type === 'allin'
+                              ? '🔥 ALL-IN'
+                              : p.lastAction.type === 'hit'
+                                ? `🃏 HIT [${p.lastAction.amount ?? ''}]`
+                                : p.lastAction.type === 'stay'
+                                  ? '✋ STAY'
+                                  : '✕ FOLD'}
+                    </span>
                   ) : null}
                   {visibleSum !== null && !p.eliminated && (
                     <span className={`hs-sum-badge ${isBusted ? 'is-bust' : ''}`}>

@@ -97,7 +97,9 @@ export function createInitialHitStayState(options: {
     stayed: false,
     hasRevealedInitial: false,
     hasActedInBet: false,
+    antePaid: 0,
     roundBet: 0,
+    lastAction: null,
     revealedHandOnEnd: false,
   }));
 
@@ -184,7 +186,9 @@ export function startNextRound(
         stayed: true,
         hasRevealedInitial: true,
         hasActedInBet: true,
+        antePaid: 0,
         roundBet: 0,
+        lastAction: null,
         revealedHandOnEnd: false,
       };
     }
@@ -199,7 +203,9 @@ export function startNextRound(
       stayed: false,
       hasRevealedInitial: false,
       hasActedInBet: false,
+      antePaid: paidAnte,
       roundBet: 0,
+      lastAction: null,
       revealedHandOnEnd: false,
     };
   });
@@ -322,6 +328,7 @@ export function performBetAction(
     players[pIdx].folded = true;
     players[pIdx].stayed = true;
     players[pIdx].hasActedInBet = true;
+    players[pIdx].lastAction = { type: 'fold' };
     logs = addLog(state, `${player.name}: 포기(Fold)`, pIdx);
 
     const remaining = players.filter((p) => !p.eliminated && !p.folded);
@@ -334,6 +341,12 @@ export function performBetAction(
     players[pIdx].chips -= toPay;
     players[pIdx].roundBet += toPay;
     players[pIdx].hasActedInBet = true;
+    players[pIdx].lastAction =
+      players[pIdx].chips === 0 && toPay > 0
+        ? { type: 'allin', amount: toPay }
+        : toPay === 0
+          ? { type: 'check' }
+          : { type: 'call', amount: toPay };
     pot += toPay;
     logs = addLog(
       state,
@@ -350,18 +363,31 @@ export function performBetAction(
     pot += toPay;
 
     if (players[pIdx].roundBet > currentHighBet) {
+      const addedOverHigh = players[pIdx].roundBet - currentHighBet;
       currentHighBet = players[pIdx].roundBet;
+      const isAllIn = players[pIdx].chips === 0 || currentHighBet >= dynamicCap;
       // Everyone else must act again
       players = players.map((p, idx) =>
-        idx === pIdx ? { ...p, hasActedInBet: true } : { ...p, hasActedInBet: false }
+        idx === pIdx
+          ? {
+              ...p,
+              hasActedInBet: true,
+              lastAction: isAllIn
+                ? { type: 'allin', amount: toPay }
+                : { type: 'raise', amount: addedOverHigh },
+            }
+          : { ...p, hasActedInBet: false }
       );
       logs = addLog(
         state,
-        `${player.name}: 레이즈(Raise → 총 ${currentHighBet}칩)`,
+        isAllIn
+          ? `${player.name}: 🔥 올인(All-In → 총 ${currentHighBet}칩)`
+          : `${player.name}: 레이즈(Raise → 총 ${currentHighBet}칩)`,
         pIdx
       );
     } else {
       players[pIdx].hasActedInBet = true;
+      players[pIdx].lastAction = { type: 'call', amount: toPay };
       logs = addLog(state, `${player.name}: 콜(Call, +${toPay}칩)`, pIdx);
     }
   }
@@ -444,6 +470,7 @@ export function performHitOrStay(
   if (choice === 'hit' && deck.length > 0) {
     const drawn = { ...deck.shift()!, faceUp: true };
     players[pIdx].hand.push(drawn);
+    players[pIdx].lastAction = { type: 'hit', amount: drawn.value };
     logs = addLog(
       state,
       `${player.name}: HIT! [${drawn.value}] 획득 (총 ${players[pIdx].hand.length}장)`,
@@ -451,6 +478,7 @@ export function performHitOrStay(
     );
   } else {
     players[pIdx].stayed = true;
+    players[pIdx].lastAction = { type: 'stay' };
     logs = addLog(
       state,
       choice === 'hit'

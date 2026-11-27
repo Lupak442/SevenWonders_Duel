@@ -16,6 +16,11 @@ export interface HitStayCard {
   faceUp: boolean;
 }
 
+export interface PlayerLastAction {
+  type: 'check' | 'call' | 'raise' | 'fold' | 'hit' | 'stay' | 'allin';
+  amount?: number;
+}
+
 export interface HitStayPlayer {
   id: number;
   name: string;
@@ -27,7 +32,9 @@ export interface HitStayPlayer {
   stayed: boolean;
   hasRevealedInitial: boolean;
   hasActedInBet: boolean;
+  antePaid: number;
   roundBet: number;
+  lastAction: PlayerLastAction | null;
   revealedHandOnEnd: boolean;
 }
 
