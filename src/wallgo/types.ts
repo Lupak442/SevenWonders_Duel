@@ -1,5 +1,5 @@
 export type WallGoMode = 'ai' | 'local' | 'online';
-export type WallGoDifficulty = 'easy' | 'normal' | 'hard';
+export type WallGoDifficulty = 'easy' | 'normal' | 'hard' | 'master';
 export type PieceShape = 'square' | 'circle';
 export type WallDir = 'N' | 'S' | 'E' | 'W';
 

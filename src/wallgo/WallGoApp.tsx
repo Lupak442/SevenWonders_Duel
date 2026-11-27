@@ -357,16 +357,33 @@ export const WallGoApp: React.FC<WallGoAppProps> = ({ onBackToSevenWonders }) =>
               <>
                 <div className="field-label">
                   AI 난이도
-                  <div className="diff-row">
-                    {(['easy', 'normal', 'hard'] as WallGoDifficulty[]).map((d) => (
+                  <div className="diff-row diff-row-4">
+                    {(['easy', 'normal', 'hard', 'master'] as WallGoDifficulty[]).map((d) => (
                       <button
                         type="button"
                         key={d}
-                        className={`diff-btn ${difficulty === d ? 'active' : ''}`}
+                        className={`diff-btn ${d === 'master' ? 'diff-grandmaster' : ''} ${
+                          difficulty === d ? 'active' : ''
+                        }`}
                         onClick={() => setDifficulty(d)}
                       >
                         <span className="diff-title">
-                          {d === 'easy' ? '입문' : d === 'normal' ? '숙련' : '전설'}
+                          {d === 'easy'
+                            ? '입문'
+                            : d === 'normal'
+                              ? '숙련'
+                              : d === 'hard'
+                                ? '전설'
+                                : '초월'}
+                        </span>
+                        <span className="diff-sub">
+                          {d === 'easy'
+                            ? 'Easy'
+                            : d === 'normal'
+                              ? 'Normal'
+                              : d === 'hard'
+                                ? 'Hard'
+                                : 'AI+'}
                         </span>
                       </button>
                     ))}
