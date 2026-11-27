@@ -647,6 +647,8 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
                     <span className="hs-status-tag tag-out">탈락</span>
                   ) : p.folded ? (
                     <span className="hs-status-tag tag-fold">FOLD</span>
+                  ) : p.chips === 0 && p.roundBet > 0 ? (
+                    <span className="hs-status-tag tag-allin">🔥 ALL-IN</span>
                   ) : p.stayed && state.phase === 'hit_stay' ? (
                     <span className="hs-status-tag tag-stay">STAY</span>
                   ) : null}
@@ -756,7 +758,16 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
                       applyAndSync((s) => performBetAction(s, 'raise', parsed));
                     }}
                   >
-                    레이즈 (최대 +{maxRaiseAdd})
+                    레이즈
+                  </button>
+                  <button
+                    type="button"
+                    className="hs-act-btn btn-allin"
+                    onClick={() =>
+                      applyAndSync((s) => performBetAction(s, 'raise', maxRaiseAdd))
+                    }
+                  >
+                    🔥 올인 (+{maxRaiseAdd})
                   </button>
                 </div>
               )}
