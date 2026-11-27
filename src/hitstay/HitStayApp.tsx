@@ -562,8 +562,22 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
             <span className="hs-hud-label">🪙 현재 팟 (Pot)</span>
             <strong className="hs-hud-val">{state.pot}</strong>
           </div>
-          <div className="hs-hud-box deck-box">
-            <span className="hs-hud-label">🃏 남은 덱</span>
+          <div
+            className={`hs-hud-box deck-box ${
+              state.deck.length === 0
+                ? 'is-empty-deck'
+                : state.deck.length <= 5
+                  ? 'is-low-deck'
+                  : ''
+            }`}
+          >
+            <span className="hs-hud-label">
+              {state.deck.length === 0
+                ? '🚫 덱 소진 (HIT 불가)'
+                : state.deck.length <= 5
+                  ? '⚠️ 남은 덱 부족!'
+                  : '🃏 남은 덱'}
+            </span>
             <strong className="hs-hud-val">{state.deck.length}장</strong>
           </div>
           <div className="hs-hud-box cap-box">
@@ -734,85 +748,109 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
           })}
         </div>
 
-        {/* Action Bar */}
-        <div className="hs-action-bar">
+        {/* Action Bar — distinctly color-coded by phase (Bet vs HIT/STAY vs Reveal) */}
+        <div
+          className={`hs-action-bar ${
+            state.phase === 'bet1' || state.phase === 'bet2'
+              ? 'phase-bet'
+              : state.phase === 'hit_stay'
+                ? 'phase-hitstay'
+                : state.phase === 'reveal_one'
+                  ? 'phase-reveal'
+                  : ''
+          }`}
+        >
           {state.phase === 'reveal_one' && canInteract && (
-            <div className="hs-action-hint">
-              위 내 패 3장 중 모두에게 공개할 카드 1장을 클릭하세요.
-            </div>
+            <>
+              <div className="hs-phase-banner banner-reveal">
+                👁️ 카드 공개 타임 — 내 패 3장 중 1장을 클릭해 공개하세요
+              </div>
+            </>
           )}
 
           {(state.phase === 'bet1' || state.phase === 'bet2') && canInteract && (
-            <div className="hs-bet-buttons">
-              <button
-                type="button"
-                className="hs-act-btn btn-call"
-                onClick={() => applyAndSync((s) => performBetAction(s, 'call'))}
-              >
-                {toCall === 0 ? '체크 (Check · 0칩)' : `콜 (Call +${toCall}칩)`}
-              </button>
-              {maxRaiseAdd >= 1 && (
-                <div className="hs-raise-box">
-                  <input
-                    type="number"
-                    className="hs-raise-input"
-                    min={1}
-                    max={maxRaiseAdd}
-                    value={raiseInput}
-                    onChange={(e) => setRaiseInput(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="hs-act-btn btn-raise"
-                    onClick={() => {
-                      const parsed = Math.max(
-                        1,
-                        Math.min(maxRaiseAdd, Math.floor(Number(raiseInput) || 1))
-                      );
-                      applyAndSync((s) => performBetAction(s, 'raise', parsed));
-                    }}
-                  >
-                    레이즈
-                  </button>
-                  <button
-                    type="button"
-                    className="hs-act-btn btn-allin"
-                    onClick={() =>
-                      applyAndSync((s) => performBetAction(s, 'raise', maxRaiseAdd))
-                    }
-                  >
-                    🔥 올인 (+{maxRaiseAdd})
-                  </button>
-                </div>
-              )}
-              <button
-                type="button"
-                className="hs-act-btn btn-fold"
-                onClick={() => applyAndSync((s) => performBetAction(s, 'fold'))}
-              >
-                포기 (Fold)
-              </button>
-            </div>
+            <>
+              <div className="hs-phase-banner banner-bet">
+                🪙 {state.phase === 'bet1' ? '1차 베팅 타임' : '2차 최종 베팅 타임'} — 칩을 걸거나 포기하세요
+              </div>
+              <div className="hs-bet-buttons">
+                <button
+                  type="button"
+                  className="hs-act-btn btn-call"
+                  onClick={() => applyAndSync((s) => performBetAction(s, 'call'))}
+                >
+                  {toCall === 0 ? '체크 (Check · 0칩)' : `콜 (Call +${toCall}칩)`}
+                </button>
+                {maxRaiseAdd >= 1 && (
+                  <div className="hs-raise-box">
+                    <input
+                      type="number"
+                      className="hs-raise-input"
+                      min={1}
+                      max={maxRaiseAdd}
+                      value={raiseInput}
+                      onChange={(e) => setRaiseInput(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="hs-act-btn btn-raise"
+                      onClick={() => {
+                        const parsed = Math.max(
+                          1,
+                          Math.min(maxRaiseAdd, Math.floor(Number(raiseInput) || 1))
+                        );
+                        applyAndSync((s) => performBetAction(s, 'raise', parsed));
+                      }}
+                    >
+                      레이즈
+                    </button>
+                    <button
+                      type="button"
+                      className="hs-act-btn btn-allin"
+                      onClick={() =>
+                        applyAndSync((s) => performBetAction(s, 'raise', maxRaiseAdd))
+                      }
+                    >
+                      🔥 올인 (+{maxRaiseAdd})
+                    </button>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="hs-act-btn btn-fold"
+                  onClick={() => applyAndSync((s) => performBetAction(s, 'fold'))}
+                >
+                  포기 (Fold)
+                </button>
+              </div>
+            </>
           )}
 
           {state.phase === 'hit_stay' && canInteract && (
-            <div className="hs-bet-buttons">
-              <button
-                type="button"
-                className="hs-act-btn btn-hit"
-                disabled={state.deck.length === 0}
-                onClick={() => applyAndSync((s) => performHitOrStay(s, 'hit'))}
-              >
-                HIT (카드 1장 더 받기)
-              </button>
-              <button
-                type="button"
-                className="hs-act-btn btn-stay"
-                onClick={() => applyAndSync((s) => performHitOrStay(s, 'stay'))}
-              >
-                STAY (멈추기)
-              </button>
-            </div>
+            <>
+              <div className="hs-phase-banner banner-hitstay">
+                🃏 카드 뽑기 타임 — HIT(1장 추가) 또는 STAY(멈추기)
+              </div>
+              <div className="hs-bet-buttons">
+                <button
+                  type="button"
+                  className="hs-act-btn btn-hit"
+                  disabled={state.deck.length === 0}
+                  onClick={() => applyAndSync((s) => performHitOrStay(s, 'hit'))}
+                >
+                  {state.deck.length === 0
+                    ? '🚫 남은 카드 없음 (HIT 불가)'
+                    : `🃏 HIT (카드 1장 더 받기 · 남은 ${state.deck.length}장)`}
+                </button>
+                <button
+                  type="button"
+                  className="hs-act-btn btn-stay"
+                  onClick={() => applyAndSync((s) => performHitOrStay(s, 'stay'))}
+                >
+                  ✋ STAY (멈추기)
+                </button>
+              </div>
+            </>
           )}
 
           {state.phase === 'round_end' && (

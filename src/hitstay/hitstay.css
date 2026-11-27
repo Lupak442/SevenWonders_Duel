@@ -113,6 +113,20 @@
   border-color: rgba(52, 211, 153, 0.5);
 }
 
+.hs-hud-box.is-low-deck {
+  border-color: #f59e0b;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.25), rgba(15, 23, 42, 0.92));
+}
+
+.hs-hud-box.is-empty-deck {
+  border-color: #ef4444;
+  background: linear-gradient(145deg, rgba(220, 38, 38, 0.32), rgba(15, 23, 42, 0.92));
+}
+
+.hs-hud-box.is-empty-deck .hs-hud-val {
+  color: #fca5a5;
+}
+
 .hs-hud-label {
   display: block;
   font-size: 10.5px;
@@ -480,14 +494,55 @@
 }
 
 .hs-action-bar {
-  background: rgba(7, 11, 20, 0.82);
-  border: 1px solid var(--border-gold);
+  background: rgba(7, 11, 20, 0.86);
+  border: 1.5px solid var(--border-gold);
   border-radius: 16px;
   padding: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
+}
+
+.hs-action-bar.phase-bet {
+  border-color: #facc15;
+  background: linear-gradient(160deg, rgba(180, 83, 9, 0.22), rgba(7, 11, 20, 0.94));
+}
+
+.hs-action-bar.phase-hitstay {
+  border-color: #34d399;
+  background: linear-gradient(160deg, rgba(6, 95, 70, 0.28), rgba(7, 11, 20, 0.94));
+}
+
+.hs-action-bar.phase-reveal {
+  border-color: #c084fc;
+  background: linear-gradient(160deg, rgba(88, 28, 135, 0.25), rgba(7, 11, 20, 0.94));
+}
+
+.hs-phase-banner {
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-align: center;
+}
+
+.banner-bet {
+  background: rgba(234, 179, 8, 0.22);
+  color: #fef08a;
+  border: 1px solid rgba(250, 204, 21, 0.45);
+}
+
+.banner-hitstay {
+  background: rgba(16, 185, 129, 0.22);
+  color: #a7f3d0;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+}
+
+.banner-reveal {
+  background: rgba(168, 85, 247, 0.22);
+  color: #e9d5ff;
+  border: 1px solid rgba(192, 132, 252, 0.45);
 }
 
 .hs-action-hint {
