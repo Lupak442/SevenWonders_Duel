@@ -31,7 +31,7 @@ import {
   startNextRound,
   toggleShowHandOnEnd,
 } from './engine';
-import { HitStayState, SeatConfig } from './types';
+import { HitStayDifficulty, HitStayState, SeatConfig } from './types';
 import './hitstay.css';
 
 interface HitStayAppProps {
@@ -60,6 +60,7 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
     initialRoomParam ? 'online' : 'ai'
   );
   const [seatCount, setSeatCount] = useState<2 | 3 | 4>(4);
+  const [difficulty, setDifficulty] = useState<HitStayDifficulty>('normal');
   const [seats, setSeats] = useState<SeatConfig[]>([
     { name: '플레이어 1', isAI: false },
     { name: '포커 봇 1', isAI: true },
@@ -146,6 +147,7 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
       createInitialHitStayState({
         mode,
         seats: configured,
+        difficulty,
         showDeckCounter,
       })
     );
@@ -219,6 +221,7 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
     const initial = createInitialHitStayState({
       mode: 'online',
       seats: configured,
+      difficulty,
       showDeckCounter,
     });
     connectOnline((ws) => {
@@ -349,6 +352,27 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
                       </button>
                     )}
                   </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="field-label">
+              봇 난이도 설정
+              <div className="diff-row">
+                {(['easy', 'normal', 'hard'] as HitStayDifficulty[]).map((d) => (
+                  <button
+                    type="button"
+                    key={d}
+                    className={`diff-btn ${difficulty === d ? 'active' : ''}`}
+                    onClick={() => setDifficulty(d)}
+                  >
+                    <span className="diff-title">
+                      {d === 'easy' ? '입문' : d === 'normal' ? '숙련' : '전설'}
+                    </span>
+                    <span className="diff-sub">
+                      {d === 'easy' ? 'Easy' : d === 'normal' ? 'Normal' : 'Hard'}
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>

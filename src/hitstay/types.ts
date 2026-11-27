@@ -1,4 +1,5 @@
 export type HitStayMode = 'ai' | 'local' | 'online';
+export type HitStayDifficulty = 'easy' | 'normal' | 'hard';
 export type HitStayPhase =
   | 'reveal_one'
   | 'bet1'
@@ -38,6 +39,7 @@ export interface SeatConfig {
 export interface HitStayState {
   phase: HitStayPhase;
   mode: HitStayMode;
+  difficulty: HitStayDifficulty;
   roundNumber: number;
   ante: number;
   targetLimit: number; // 5..12 from 8-sided die

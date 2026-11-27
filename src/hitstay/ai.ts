@@ -19,6 +19,7 @@ export function performHitStayAITurn(state: HitStayState): HitStayState {
     return revealInitialCard(state, pIdx, pick.id);
   }
 
+  const diff = state.difficulty ?? 'normal';
   const sum = getHandSum(ai.hand);
   const diffToLimit = state.targetLimit - sum;
 
@@ -27,19 +28,29 @@ export function performHitStayAITurn(state: HitStayState): HitStayState {
     if (state.deck.length === 0) {
       return performHitOrStay(state, 'stay');
     }
-    // If already busted, small chance to bluff-hit, otherwise stay
     if (sum > state.targetLimit) {
-      return performHitOrStay(state, Math.random() < 0.12 ? 'hit' : 'stay');
+      // Hard AI occasionally uses -1 recovery if remaining deck has high -1 ratio and sum == targetLimit + 1
+      const negRatio =
+        state.deck.filter((c) => c.value === -1).length / state.deck.length;
+      if (diff === 'hard' && sum === state.targetLimit + 1 && negRatio >= 0.25) {
+        return performHitOrStay(state, 'hit');
+      }
+      const bluffChance = diff === 'hard' ? 0.18 : diff === 'normal' ? 0.1 : 0.22;
+      return performHitOrStay(state, Math.random() < bluffChance ? 'hit' : 'stay');
     }
-    // Calculate bust probability from remaining deck
+
     const safeCards = state.deck.filter((c) => sum + c.value <= state.targetLimit).length;
     const safeProb = safeCards / state.deck.length;
 
     if (diffToLimit === 0) {
-      // Exact hit! Only hit if -1 is abundant? No, stay!
       return performHitOrStay(state, 'stay');
     }
-    if (safeProb >= 0.62 || (diffToLimit >= 3 && safeProb >= 0.45)) {
+    if (diff === 'easy') {
+      // Easy bot hits recklessly or stays early randomly
+      return performHitOrStay(state, diffToLimit >= 2 && Math.random() < 0.65 ? 'hit' : 'stay');
+    }
+    const threshold = diff === 'hard' ? 0.56 : 0.62;
+    if (safeProb >= threshold || (diffToLimit >= 3 && safeProb >= 0.42)) {
       return performHitOrStay(state, 'hit');
     }
     return performHitOrStay(state, 'stay');
@@ -51,27 +62,32 @@ export function performHitStayAITurn(state: HitStayState): HitStayState {
     const canRaise =
       state.currentHighBet < state.roundBetCap && ai.chips > toCall;
 
-    // Busted in bet2 -> usually fold to a bet, occasionally bluff
     if (state.phase === 'bet2' && sum > state.targetLimit) {
-      if (toCall === 0) return performBetAction(state, 'call');
-      if (Math.random() < 0.15 && toCall <= 3) {
+      if (toCall === 0) {
+        // Hard AI may fire a small bluff bet when checked to
+        if (diff === 'hard' && canRaise && Math.random() < 0.22) {
+          return performBetAction(state, 'raise', 2);
+        }
+        return performBetAction(state, 'call');
+      }
+      const heroCall = diff === 'easy' ? 0.35 : diff === 'normal' ? 0.12 : 0.05;
+      if (Math.random() < heroCall && toCall <= 4) {
         return performBetAction(state, 'call');
       }
       return performBetAction(state, 'fold');
     }
 
-    // Strong hand (0..1 away from targetLimit)
     if (diffToLimit >= 0 && diffToLimit <= 1) {
-      if (canRaise && Math.random() < 0.65) {
-        const amt = Math.min(3, state.roundBetCap - state.currentHighBet);
+      const raiseProb = diff === 'hard' ? 0.8 : diff === 'normal' ? 0.6 : 0.35;
+      if (canRaise && Math.random() < raiseProb) {
+        const amt = Math.min(diff === 'hard' ? 4 : 2, state.roundBetCap - state.currentHighBet);
         return performBetAction(state, 'raise', Math.max(1, amt));
       }
       return performBetAction(state, 'call');
     }
 
-    // Decent hand (2..3 away from targetLimit)
     if (diffToLimit >= 2 && diffToLimit <= 3) {
-      if (toCall <= 4) {
+      if (toCall <= (diff === 'hard' ? 5 : 4)) {
         if (canRaise && state.phase === 'bet1' && Math.random() < 0.25) {
           return performBetAction(state, 'raise', 1);
         }
@@ -80,9 +96,8 @@ export function performHitStayAITurn(state: HitStayState): HitStayState {
       return Math.random() < 0.5 ? performBetAction(state, 'call') : performBetAction(state, 'fold');
     }
 
-    // Weak hand
     if (toCall === 0) return performBetAction(state, 'call');
-    if (toCall <= 2) return performBetAction(state, 'call');
+    if (toCall <= (diff === 'easy' ? 3 : 2)) return performBetAction(state, 'call');
     return performBetAction(state, 'fold');
   }
 

@@ -1,6 +1,7 @@
 import {
   CardValue,
   HitStayCard,
+  HitStayDifficulty,
   HitStayMode,
   HitStayPlayer,
   HitStayState,
@@ -82,6 +83,7 @@ function findFirstFromDealer(
 export function createInitialHitStayState(options: {
   mode: HitStayMode;
   seats: SeatConfig[];
+  difficulty?: HitStayDifficulty;
   showDeckCounter?: boolean;
 }): HitStayState {
   const players: HitStayPlayer[] = options.seats.map((s, idx) => ({
@@ -103,6 +105,7 @@ export function createInitialHitStayState(options: {
   const baseState: HitStayState = {
     phase: 'reveal_one',
     mode: options.mode,
+    difficulty: options.difficulty ?? 'normal',
     roundNumber: 0,
     ante: 1,
     targetLimit: 8,
