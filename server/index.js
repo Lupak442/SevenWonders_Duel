@@ -90,7 +90,8 @@ wss.on('connection', (ws) => {
 
     if (data.type === 'create_room') {
       const code = makeRoomCode();
-      const maxPlayers = data.maxPlayers === 3 ? 3 : 2;
+      const rawMax = Number(data.maxPlayers) || 2;
+      const maxPlayers = Math.min(4, Math.max(2, rawMax));
       const players = Array(maxPlayers).fill(null);
       const playerNames = Array(maxPlayers).fill(null);
       players[0] = ws;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Bot, Globe, Grid3X3, Landmark, Plus, Shield, Sparkles, Swords, Users } from 'lucide-react';
+import { BookOpen, Bot, Dices, Globe, Grid3X3, Landmark, Plus, Shield, Sparkles, Swords, Users } from 'lucide-react';
 import { AIDifficulty } from '../engine/types';
 
 interface LobbyProps {
@@ -17,6 +17,7 @@ interface LobbyProps {
   onJoinOnline: (serverUrl: string, roomCode: string, playerName: string) => void;
   onOpenRules: () => void;
   onSwitchToWallGo: () => void;
+  onSwitchToHitStay: () => void;
   onlineStatus: string | null;
 }
 
@@ -39,6 +40,7 @@ export const Lobby: React.FC<LobbyProps> = ({
   onJoinOnline,
   onOpenRules,
   onSwitchToWallGo,
+  onSwitchToHitStay,
   onlineStatus,
 }) => {
   const [difficulty, setDifficulty] = useState<AIDifficulty>('normal');
@@ -57,14 +59,24 @@ export const Lobby: React.FC<LobbyProps> = ({
 
   return (
     <div className="lobby-screen">
-      <button
-        type="button"
-        className="wg-top-switch-btn"
-        onClick={onSwitchToWallGo}
-      >
-        <Grid3X3 size={15} />
-        <span>벽바둑 2 하기</span>
-      </button>
+      <div className="top-game-switchers">
+        <button
+          type="button"
+          className="game-switch-pill"
+          onClick={onSwitchToWallGo}
+        >
+          <Grid3X3 size={14} />
+          <span>벽바둑 2</span>
+        </button>
+        <button
+          type="button"
+          className="game-switch-pill"
+          onClick={onSwitchToHitStay}
+        >
+          <Dices size={14} />
+          <span>힛 &amp; 스테이</span>
+        </button>
+      </div>
       <div className="lobby-ambient-glow" aria-hidden="true" />
       <div className="lobby-card">
         <div className="lobby-badge-row">

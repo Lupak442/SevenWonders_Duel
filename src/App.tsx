@@ -24,6 +24,7 @@ import {
 } from './components/Modals';
 import { PlayerPanel } from './components/PlayerPanel';
 import { PyramidBoard } from './components/PyramidBoard';
+import { HitStayApp } from './hitstay/HitStayApp';
 import { WallGoApp } from './wallgo/WallGoApp';
 import { performAITurn } from './engine/ai';
 import {
@@ -41,11 +42,15 @@ import {
 import { AIDifficulty, GameState } from './engine/types';
 
 export function App() {
-  const initialHasWg =
-    typeof window !== 'undefined' &&
-    Boolean(new URLSearchParams(window.location.search).get('wg'));
-  const [activeGame, setActiveGame] = useState<'seven' | 'wallgo'>(
-    initialHasWg ? 'wallgo' : 'seven'
+  const initialGame = (() => {
+    if (typeof window === 'undefined') return 'seven' as const;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('wg')) return 'wallgo' as const;
+    if (params.get('hs')) return 'hitstay' as const;
+    return 'seven' as const;
+  })();
+  const [activeGame, setActiveGame] = useState<'seven' | 'wallgo' | 'hitstay'>(
+    initialGame
   );
   const [state, setState] = useState<GameState | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
@@ -230,6 +235,10 @@ export function App() {
     return <WallGoApp onBackToSevenWonders={() => setActiveGame('seven')} />;
   }
 
+  if (activeGame === 'hitstay') {
+    return <HitStayApp onBackToSevenWonders={() => setActiveGame('seven')} />;
+  }
+
   if (!state) {
     return (
       <>
@@ -240,6 +249,7 @@ export function App() {
           onJoinOnline={handleJoinOnline}
           onOpenRules={() => setShowRules(true)}
           onSwitchToWallGo={() => setActiveGame('wallgo')}
+          onSwitchToHitStay={() => setActiveGame('hitstay')}
           onlineStatus={onlineStatus}
         />
         {showRules && <RulesModal onClose={() => setShowRules(false)} />}
