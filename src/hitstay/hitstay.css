@@ -180,7 +180,78 @@
 
 .hs-player-card.is-turn {
   border-color: var(--gold-light);
-  box-shadow: 0 0 20px rgba(250, 204, 21, 0.22);
+  background: linear-gradient(145deg, rgba(234, 179, 8, 0.24), rgba(15, 23, 42, 0.92));
+  box-shadow: 0 0 24px rgba(250, 204, 21, 0.32);
+}
+
+.hs-turn-now-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fde047;
+  color: #090d16;
+}
+
+.hs-win-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #052e16;
+}
+
+.hs-winner-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.3), rgba(202, 138, 4, 0.24));
+  border: 1.5px solid #4ade80;
+  box-shadow: 0 0 24px rgba(74, 222, 128, 0.25);
+}
+
+.hs-wb-icon {
+  color: #fde047;
+  flex-shrink: 0;
+}
+
+.hs-wb-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hs-wb-text strong {
+  font-size: 12px;
+  color: #86efac;
+}
+
+.hs-wb-text span {
+  font-size: 14px;
+  font-weight: 800;
+  color: white;
+}
+
+.hs-raise-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hs-raise-input {
+  width: 64px;
+  padding: 9px 8px;
+  border-radius: 10px;
+  border: 1.5px solid var(--gold);
+  background: rgba(7, 11, 20, 0.88);
+  color: var(--gold-light);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
 }
 
 .hs-player-card.is-folded,

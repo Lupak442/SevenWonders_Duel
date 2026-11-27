@@ -50,6 +50,7 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
   const [state, setState] = useState<HitStayState | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [showDeckPanel, setShowDeckPanel] = useState(false);
+  const [raiseInput, setRaiseInput] = useState('1');
 
   // Lobby state
   const initialRoomParam =
@@ -114,7 +115,7 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
 
     const timer = window.setTimeout(() => {
       applyAndSync((prev) => performHitStayAITurn(prev));
-    }, 550);
+    }, 1300);
     return () => window.clearTimeout(timer);
   }, [state, isOnlineWaiting, myOnlineSeat, applyAndSync]);
 
@@ -588,6 +589,17 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
           </div>
         )}
 
+        {/* Prominent Round Winner Banner */}
+        {state.phase === 'round_end' && state.lastRoundSummary && (
+          <div className="hs-winner-banner">
+            <Trophy size={20} className="hs-wb-icon" />
+            <div className="hs-wb-text">
+              <strong>{state.roundNumber}라운드 결과</strong>
+              <span>{state.lastRoundSummary}</span>
+            </div>
+          </div>
+        )}
+
         {/* Players Grid */}
         <div className="hs-players-grid">
           {state.players.map((p) => {
@@ -618,6 +630,10 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
                       <span className="hs-dealer-badge">선</span>
                     )}
                     {isViewer && <span className="hs-me-badge">나</span>}
+                    {isTurn && <span className="hs-turn-now-badge">차례!</span>}
+                    {isWinner && state.phase === 'round_end' && (
+                      <span className="hs-win-badge">👑 승리</span>
+                    )}
                   </div>
                   <div className="hs-p-chips">
                     <Coins size={13} />
@@ -717,21 +733,32 @@ export const HitStayApp: React.FC<HitStayAppProps> = ({ onBackToSevenWonders }) 
                 className="hs-act-btn btn-call"
                 onClick={() => applyAndSync((s) => performBetAction(s, 'call'))}
               >
-                {toCall === 0 ? '체크 (Check)' : `콜 (Call +${toCall}칩)`}
+                {toCall === 0 ? '체크 (Check · 0칩)' : `콜 (Call +${toCall}칩)`}
               </button>
-              {[1, 2, 5].map((inc) =>
-                maxRaiseAdd >= inc ? (
+              {maxRaiseAdd >= 1 && (
+                <div className="hs-raise-box">
+                  <input
+                    type="number"
+                    className="hs-raise-input"
+                    min={1}
+                    max={maxRaiseAdd}
+                    value={raiseInput}
+                    onChange={(e) => setRaiseInput(e.target.value)}
+                  />
                   <button
-                    key={inc}
                     type="button"
                     className="hs-act-btn btn-raise"
-                    onClick={() =>
-                      applyAndSync((s) => performBetAction(s, 'raise', inc))
-                    }
+                    onClick={() => {
+                      const parsed = Math.max(
+                        1,
+                        Math.min(maxRaiseAdd, Math.floor(Number(raiseInput) || 1))
+                      );
+                      applyAndSync((s) => performBetAction(s, 'raise', parsed));
+                    }}
                   >
-                    레이즈 +{inc}
+                    레이즈 (최대 +{maxRaiseAdd})
                   </button>
-                ) : null
+                </div>
               )}
               <button
                 type="button"
